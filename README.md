@@ -6,11 +6,13 @@
 ---
 <h4>TODO</h4>
 
+- [ ] Make everything into functions for better readability
 - [ ] Add links to Edge bookmarks for Nessus and Bloodhound
-- [ ] Add workloads for Visual Studio installation via WinGet
 - [ ] License BurpSuite and Nessus
+- [ ] Add BurpSuite extensions
+- [ ] Add Nessus plugins
 - [ ] Figure out how to install Spotify via WinGet as it requires user context, not administrative context
 - [ ] Add capabilities for "github_applications"
-- [ ] Modify WinGet logs to be more useful
-- [ ] Modify Docker logs to be more useful
+- [ ] Create better and consistent logs for everything
 - [ ] Update the RunOnce section of the script to not... be like that
+- [ ] Create folders for different phases within Tools, such as Active Directory
