@@ -20,7 +20,7 @@ An official Windows 11 installation USB. See [here](https://www.microsoft.com/en
 - Boot into the USB. Et voilà.
     - You will be asked to select your language and keyboard localisation, but thereafter is completely unattended.
 
-Do NOT press anything or close windows until you see a `SetupComplete.txt` file on the desktop.
+It may look complete at points, but do NOT press anything or close windows until you see a `SetupComplete.txt` file on the desktop.
 
 Note that changing anything other than what is mentioned above is not supported and may break things.
 
@@ -38,3 +38,5 @@ Note that changing anything other than what is mentioned above is not supported 
 - [ ] Create better and consistent logs for everything
 - [ ] Update the RunOnce section of the script to not... be like that
 - [ ] Create folders for different phases within Tools, such as Active Directory
+- [ ] Check everything is installed Mimikatz, Rubeus, Seatbelt compilation
+- [ ] Install NetExec via Pipx
