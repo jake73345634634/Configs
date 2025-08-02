@@ -7,6 +7,7 @@
 <h4>TODO</h4>
 
 - [ ] Make everything into functions for better readability
+- [ ] Make Dockerm and Bloodhound run on start
 - [ ] Add links to Edge bookmarks for Nessus and Bloodhound
 - [ ] License BurpSuite and Nessus
 - [ ] Add BurpSuite extensions
