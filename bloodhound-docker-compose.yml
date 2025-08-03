@@ -74,7 +74,7 @@ services:
       - bhe_enable_text_logger=${bhe_enable_text_logger:-true}
       - bhe_default_admin_password=${bhe_default_admin_password:-admin}
     ports:
-      - ${BLOODHOUND_HOST:-127.0.0.1}:${BLOODHOUND_PORT:-8080}:8080
+      - ${BLOODHOUND_HOST:-127.0.0.1}:${BLOODHOUND_PORT:-10000}:8080
     depends_on:
       app-db:
         condition: service_healthy
