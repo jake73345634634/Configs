@@ -34,7 +34,7 @@ Note that changing anything other than what is mentioned above is not supported 
 - [ ] Add BurpSuite extensions
 - [ ] Add Nessus plugins
 - [ ] Figure out how to install Spotify via WinGet as it requires user context, not administrative context
-- [ ] Add capabilities for "github_applications"
+- [ ] Add capabilities for "applications"
 - [ ] Create better and consistent logs for everything
 - [ ] Update the RunOnce section of the script to not... be like that
 - [ ] Create folders for different phases within Tools, such as Active Directory
