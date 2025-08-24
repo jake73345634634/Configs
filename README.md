@@ -24,6 +24,13 @@ It may look complete at points, but do NOT press anything or close windows until
 
 Note that changing anything other than what is mentioned above is not supported and may break things.
 
+<h4>Post-Installation</h4>
+
+- License Nessus
+- Add Nessus plugins
+- License BurpSuite
+- Add BurpSuite extensions
+
 ---
 <h4>TODO</h4>
 
@@ -37,5 +44,6 @@ Note that changing anything other than what is mentioned above is not supported 
 - [ ] Add capabilities for "applications"
 - [ ] Create better and consistent logs for everything
 - [ ] Update the RunOnce section of the script to not... be like that
-- [ ] Check everything is installed for building of tools
+- [ ] Create folders for different phases within Tools, such as Active Directory
+- [ ] Check everything is installed Mimikatz, Rubeus, Seatbelt, Certipy compilation
 - [ ] Install NetExec via Pipx
