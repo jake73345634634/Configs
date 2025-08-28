@@ -34,6 +34,7 @@ Note that changing anything other than what is mentioned above is not supported 
 ---
 <h4>TODO</h4>
 
+- [ ] Add-WindowsCapability -Online -Name Rsat.Dns.Tools~~~~0.0.1.0
 - [ ] Make everything into functions for better readability
 - [ ] Make Docker and Bloodhound run on start
 - [ ] Add links to Edge bookmarks for Nessus and Bloodhound
