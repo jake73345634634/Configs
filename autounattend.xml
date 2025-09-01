@@ -649,7 +649,7 @@ $kubernetes = New-Item -Path $tools_directory -Name Kubernetes -ItemType Directo
 $winget_applications = @{
     "Microsoft.WindowsTerminal" = ""
     "Microsoft.VisualStudio.2022.Community" = "--quiet --wait --norestart --add Microsoft.VisualStudio.Workload.ManagedDesktop --add Microsoft.Net.Component.4.5.TargetingPack --add Microsoft.Net.Component.4.5.1.TargetingPack --add Microsoft.Net.Component.4.5.2.TargetingPack --add Microsoft.Net.Component.4.6.TargetingPack --add Microsoft.Net.Component.4.6.1.TargetingPack --add Microsoft.Net.Component.4.6.2.TargetingPack --add Microsoft.Net.Component.4.7.TargetingPack --add Microsoft.Net.Component.4.7.1.TargetingPack --add Microsoft.Net.Component.4.7.2.TargetingPack --add Microsoft.Net.Component.4.8.TargetingPack"
-    "Microsoft.VisualStudioCode" = ""
+    "Microsoft.VisualStudioCode" = "/silent /mergetasks='!runcode,addcontextmenufiles,addcontextmenufolders'"
     "Microsoft.Office" = ""
     "Microsoft.AzureCLI" = ""
     "Microsoft.Azure.StorageExplorer" = ""
