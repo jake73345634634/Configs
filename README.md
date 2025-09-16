@@ -41,7 +41,7 @@ Note that changing anything other than what is mentioned above is not supported 
 - [ ] Make everything into functions for better readability
 - [ ] Make Docker and Bloodhound run on start
 - [ ] License BurpSuite and Nessus
-- [ ] Add BurpSuite extensions
+- [ ] Add BurpSuite extensions and Jython
 - [ ] Add Nessus plugins
 - [ ] Figure out how to install Spotify via WinGet as it requires user context, not administrative context
 - [ ] Add capabilities for "applications"
