@@ -1,7 +1,7 @@
 <h3>🎁 Configs</h3>
 
 ---
-✨ A list of configuration files used to build a clean Windows 11 image.
+✨ A list of configuration files used to build a Windows 11 penetration testing image.
 
 ---
 <h4>Requirements</h4>
