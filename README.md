@@ -11,18 +11,13 @@ An official Windows 11 installation USB. See [here](https://www.microsoft.com/en
 ---
 <h4>Usage</h4>
 
-- Download `autounattend.xml`. You do not need the rest of this repository.
-- Navigate [here](https://schneegans.de/windows/unattend-generator) and import the above XML file.
-- Scroll down to the `Computer name` section, and replace **JAKE** with your name.
-- Scroll down to the `User accounts` section, and replace **Jake** with your name.
-- Scroll down to the `WLAN / Wi-Fi setup` section, and replace the XML with your WLAN export.
-- At the bottom, click `Download .xml file` and put this file into the root of your installation USB.
+- Download `autounattend.xml` into the root of your installation USB (you do not need the rest of this repository).
 - Boot into the USB. Et voilà.
     - You will be asked to select your language and keyboard localisation, but thereafter is completely unattended.
 
-It may look complete at points, but do NOT press anything or close windows until you see a `SetupComplete.txt` file on the desktop.
+$\color{Yellow}{\textsf{Note: Wi-Fi is not supported. You must use a wired connection. Ensure you are wired in prior to booting into the USB.}}$
 
-Note that changing anything other than what is mentioned above is not supported and may break things.
+$\color{Yellow}{\textsf{Note: It may look complete at points, but do NOT press anything or close any windows until you see a SetupComplete.txt file on the desktop.}}$
 
 <h4>Post-Installation</h4>
 
