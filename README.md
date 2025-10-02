@@ -42,6 +42,5 @@ $\color{Yellow}{\textsf{Note: It may look complete at points, but do NOT press a
 - [ ] Add capabilities for "applications"
 - [ ] Create better and consistent logs for everything
 - [ ] Update the RunOnce section of the script to not... be like that
-- [ ] Create folders for different phases within Tools, such as Active Directory
 - [ ] Check everything is installed Mimikatz, Rubeus, Seatbelt, Certipy compilation
 - [ ] Install NetExec via Pipx
