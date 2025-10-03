@@ -84,7 +84,7 @@ $\color{Yellow}{\textsf{Note: It may look complete at points, but do NOT press a
 <h5>Active Directory Testing</h5>
 
 - RSAT
-- Bloodhound
+- BloodHound
 - PlumHound
 - SharpHound
 - RustHound-CE
