@@ -47,6 +47,7 @@ $\color{Yellow}{\textsf{Note: It may look complete at points, but do NOT press a
 - Insomnia
 - Spotify
 - Bloodhound
+- PlumHound
 - Nuclei
 - BBOT
 - CyberChef
@@ -77,6 +78,7 @@ $\color{Yellow}{\textsf{Note: It may look complete at points, but do NOT press a
 - RustHound-CE
 - Certipy
 - bloodyAD
+- BlueHound
 
 <h5>Azure Testing</h5>
 
