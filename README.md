@@ -31,6 +31,7 @@ $\color{Yellow}{\textsf{Note: It may look complete at points, but do NOT press a
 
 <h5>TODO Sort all of this into categories</h5>
 
+- Kali Linux via WSL
 - WinGet
 - Office 365
 - WSL
