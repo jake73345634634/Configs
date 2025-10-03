@@ -46,8 +46,6 @@ $\color{Yellow}{\textsf{Note: It may look complete at points, but do NOT press a
 - VirtualBox
 - Insomnia
 - Spotify
-- Bloodhound
-- PlumHound
 - Nuclei
 - BBOT
 - CyberChef
@@ -74,6 +72,8 @@ $\color{Yellow}{\textsf{Note: It may look complete at points, but do NOT press a
 <h5>Active Directory Testing</h5>
 
 - RSAT
+- Bloodhound
+- PlumHound
 - SharpHound
 - RustHound-CE
 - Certipy
