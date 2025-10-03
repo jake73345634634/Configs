@@ -32,11 +32,9 @@ $\color{Yellow}{\textsf{Note: It may look complete at points, but do NOT press a
 <h5>TODO Sort all of this into categories</h5>
 
 - Kali Linux via WSL
-- WinGet
 - Office 365
 - WSL
 - Docker
-- SysInternals
 - Wireguard
 - 7zip
 - Git
@@ -44,30 +42,44 @@ $\color{Yellow}{\textsf{Note: It may look complete at points, but do NOT press a
 - mRemoteNG
 - Wireshark
 - VirtualBox
-- Insomnia
 - Spotify
-- Nuclei
-- BBOT
 - CyberChef
-- Mimikatz
-- Rubeus
-- Seatbelt
 - Nuclei Templates
-- Nuget
 
 <h5>Text Editors</h5>
 
 - Visual Studio
 - Visual Studio Code
 
+<h5>Utilities</h5>
+
+- WinGet
+- Nuget
+
+<h5>External Testing</h5>
+
+- BBOT
+
 <h5>Network Testing</h5>
 
 - Nmap
 - Nessus
+- Nuclei
+
+<h5>Windows Testing</h5>
+
+- Mimikatz
+- Rubeus
+- Seatbelt
+- SysInternals
 
 <h5>Web Application Testing</h5>
 
 - BurpSuite Professional
+
+<h5>API Testing</h5>
+
+- Insomnia
 
 <h5>Active Directory Testing</h5>
 
