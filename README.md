@@ -91,6 +91,8 @@ $\color{Yellow}{\textsf{Note: It may look complete at points, but do NOT press a
 - Certipy
 - bloodyAD
 - BlueHound
+- ScriptSentry
+- GPOZaurr
 
 <h5>Azure Testing</h5>
 
