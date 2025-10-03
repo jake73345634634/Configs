@@ -27,6 +27,86 @@ $\color{Yellow}{\textsf{Note: It may look complete at points, but do NOT press a
 - Add BurpSuite extensions
 
 ---
+<h4>What is Included?</h4>
+
+<h5>TODO Sort all of this into categories</h5>
+
+- WinGet
+- Office 365
+- WSL
+- Docker
+- SysInternals
+- Wireguard
+- 7zip
+- Git
+- Greenshot
+- mRemoteNG
+- Wireshark
+- VirtualBox
+- Insomnia
+- Spotify
+- Bloodhound
+- Nuclei
+- BBOT
+- CyberChef
+- Mimikatz
+- Rubeus
+- Seatbelt
+- Nuclei Templates
+- Nuget
+
+<h5>Text Editors</h5>
+
+- Visual Studio
+- Visual Studio Code
+
+<h5>Network Testing</h5>
+
+- Nmap
+- Nessus
+
+<h5>Web Application Testing</h5>
+
+- BurpSuite Professional
+
+<h5>Active Directory Testing</h5>
+
+- RSAT
+- SharpHound
+- RustHound-CE
+- Certipy
+- bloodyAD
+
+<h5>Azure Testing</h5>
+
+- Azure CLI
+- AADInternals
+- AzureHound
+- Azure Storage Explorer
+
+<h5>Kubernetes Testing</h5>
+
+- Kubernetes RBAC Audit
+
+<h5>Obfuscation</h5>
+
+- InvisibilityCloak
+- yetAnotherObfuscator
+- Invoke-Argfuscator
+
+<h5>Languages</h5>
+
+- Python
+- NodeJS
+- Go
+- JQ
+
+<h5>Databases</h5>
+
+- Postgres
+- Neo4j
+
+---
 <h4>TODO</h4>
 
 - [ ] Add shortcuts for all tools that can be ran on this host
