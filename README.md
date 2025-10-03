@@ -27,7 +27,7 @@ $\color{Yellow}{\textsf{Note: It may look complete at points, but do NOT press a
 - Add BurpSuite extensions
 
 ---
-<h4>What is Included?</h4>
+<h4>What's Included?</h4>
 
 <h5>TODO Sort all of this into categories</h5>
 
