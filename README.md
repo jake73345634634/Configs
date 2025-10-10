@@ -45,6 +45,8 @@ $\color{Yellow}{\textsf{Note: It may look complete at points, but do NOT press a
 - Spotify
 - CyberChef
 - Nuclei Templates
+- Firebird
+- DBeaver
 
 <h5>Text Editors</h5>
 
