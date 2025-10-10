@@ -107,11 +107,12 @@ $\color{Yellow}{\textsf{Note: It may look complete at points, but do NOT press a
 
 - Kubernetes RBAC Audit
 
-<h5>Obfuscation</h5>
+<h5>Evasion</h5>
 
 - InvisibilityCloak
 - yetAnotherObfuscator
 - Invoke-Argfuscator
+- Deoptimizer
 
 <h5>Languages</h5>
 
