@@ -1,0 +1,15 @@
+{
+  "https://github.com/jake73345634634/Configs": "$config\\Configs",
+  "https://github.com/h4wkst3r/InvisibilityCloak": "$evasion\\InvisibilityCloak",
+  "https://github.com/0xb11a1/yetAnotherObfuscator": "$evasion\\yetAnotherObfuscator",
+  "https://github.com/gentilkiwi/mimikatz": "$windows\\mimikatz",
+  "https://github.com/GhostPack/Rubeus": "$windows\\Rubeus",
+  "https://github.com/GhostPack/Seatbelt": "$windows\\Seatbelt",
+  "https://github.com/SpecterOps/AzureHound": "$azure\\AzureHound",
+  "https://github.com/SpecterOps/SharpHound": "$active_directory\\SharpHound",
+  "https://github.com/g0h4n/RustHound-CE": "$active_directory\\RustHound-CE",
+  "https://github.com/ly4k/Certipy": "$active_directory\\Certipy",
+  "https://github.com/CravateRouge/bloodyAD": "$active_directory\\bloodyAD",
+  "https://github.com/projectdiscovery/nuclei-templates": "$network\\nuclei-templates",
+  "https://github.com/jake73345634634/Kubernetes-RBAC-Audit": "$kubernetes\\Kubernetes-RBAC-Audit"
+}
