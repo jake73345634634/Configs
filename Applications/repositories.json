@@ -11,6 +11,6 @@
   "https://github.com/ly4k/Certipy": "$active_directory\\Certipy",
   "https://github.com/CravateRouge/bloodyAD": "$active_directory\\bloodyAD",
   "https://github.com/projectdiscovery/nuclei-templates": "$network\\nuclei-templates",
-  "https://github.com/jake73345634634/Kubernetes-RBAC-Audit": "$kubernetes\\Kubernetes-RBAC-Audit"
+  "https://github.com/jake73345634634/Kubernetes-RBAC-Audit": "$kubernetes\\Kubernetes-RBAC-Audit",
   "https://github.com/danielmiessler/SecLists": "$config\\SecLists"
 }
