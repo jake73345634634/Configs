@@ -7,9 +7,13 @@
   "https://github.com/GhostPack/Seatbelt": "$windows\\Seatbelt",
   "https://github.com/SpecterOps/AzureHound": "$azure\\AzureHound",
   "https://github.com/SpecterOps/SharpHound": "$active_directory\\SharpHound",
+  "https://github.com/PlumHound/PlumHound": "$active_directory\\PlumHound",
+  "https://github.com/zeronetworks/BlueHound": "$active_directory\\BlueHound",
   "https://github.com/g0h4n/RustHound-CE": "$active_directory\\RustHound-CE",
   "https://github.com/ly4k/Certipy": "$active_directory\\Certipy",
   "https://github.com/CravateRouge/bloodyAD": "$active_directory\\bloodyAD",
+  "https://github.com/techspence/ScriptSentry": "$active_directory\\ScriptSentry",
+  "https://github.com/EvotecIT/GPOZaurr": "$active_directory\\GPOZaurr",
   "https://github.com/projectdiscovery/nuclei-templates": "$network\\nuclei-templates",
   "https://github.com/jake73345634634/Kubernetes-RBAC-Audit": "$kubernetes\\Kubernetes-RBAC-Audit",
   "https://github.com/danielmiessler/SecLists": "$config\\SecLists"
