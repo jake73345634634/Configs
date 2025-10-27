@@ -47,6 +47,7 @@ $\color{Yellow}{\textsf{Note: It may look complete at points, but do NOT press a
 - Nuclei Templates
 - Firebird
 - DBeaver
+- SSMS
 - SecLists
 
 <h5>Text Editors</h5>
