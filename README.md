@@ -134,7 +134,6 @@ $\color{Yellow}{\textsf{Note: It may look complete at points, but do NOT press a
 - [ ] Add shortcuts for all tools that can be ran on this host
 - [ ] Add VMWare download and checksum verification
 - [ ] Add Kali VM download
-- [ ] Add-WindowsCapability -Online -Name Rsat.Dns.Tools~~~~0.0.1.0
 - [ ] Make Docker and Bloodhound run on start
 - [ ] License BurpSuite and Nessus
 - [ ] Add BurpSuite extensions and Jython
