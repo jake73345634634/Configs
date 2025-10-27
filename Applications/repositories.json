@@ -2,6 +2,7 @@
   "https://github.com/jake73345634634/Win11-Pentest": "$config\\Win11-Pentest",
   "https://github.com/h4wkst3r/InvisibilityCloak": "$evasion\\InvisibilityCloak",
   "https://github.com/0xb11a1/yetAnotherObfuscator": "$evasion\\yetAnotherObfuscator",
+  "https://github.com/EgeBalci/deoptimizer": "$evasion\\deoptimizer",
   "https://github.com/gentilkiwi/mimikatz": "$windows\\mimikatz",
   "https://github.com/GhostPack/Rubeus": "$windows\\Rubeus",
   "https://github.com/GhostPack/Seatbelt": "$windows\\Seatbelt",
