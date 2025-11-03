@@ -131,6 +131,9 @@ $\color{Yellow}{\textsf{Note: It may look complete at points, but do NOT press a
 ---
 <h4>TODO</h4>
 
+- [ ] Change "Config" folder location to be "Information"
+- [ ] Create "Config" folder in this repo for... config
+- [ ] Install default tools for Kali WSL
 - [ ] Add shortcuts for all tools that can be ran on this host
 - [ ] Add VMWare download and checksum verification
 - [ ] Add Kali VM download
