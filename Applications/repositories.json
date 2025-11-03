@@ -17,5 +17,6 @@
   "https://github.com/EvotecIT/GPOZaurr": "$active_directory\\GPOZaurr",
   "https://github.com/projectdiscovery/nuclei-templates": "$network\\nuclei-templates",
   "https://github.com/jake73345634634/Kubernetes-RBAC-Audit": "$kubernetes\\Kubernetes-RBAC-Audit",
-  "https://github.com/danielmiessler/SecLists": "$config\\SecLists"
+  "https://github.com/danielmiessler/SecLists": "$config\\SecLists",
+  "https://github.com/ihebski/DefaultCreds-cheat-sheet": "$config\\DefaultCreds-cheat-sheet"
 }
