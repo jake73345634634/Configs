@@ -49,6 +49,8 @@ $\color{Yellow}{\textsf{Note: It may look complete at points, but do NOT press a
 - DBeaver
 - SSMS
 - SecLists
+- Default Creds Cheat Sheet
+- Username Anarchy
 
 <h5>Text Editors</h5>
 
