@@ -133,6 +133,7 @@ $\color{Yellow}{\textsf{Note: It may look complete at points, but do NOT press a
 ---
 <h4>TODO</h4>
 
+- [ ] Add GNS3 and images for Cisco switches and routers, Fortinets, Dells
 - [ ] Change "Config" folder location to be "Information"
 - [ ] Create "Config" folder in this repo for... config
 - [ ] Install default tools for Kali WSL
