@@ -21,5 +21,6 @@
   "https://github.com/ihebski/DefaultCreds-cheat-sheet": "$config\\DefaultCreds-cheat-sheet",
   "https://github.com/urbanadventurer/username-anarchy": "$config\\username-anarchy",
   "https://github.com/jakobfriedl/precompiled-binaries": "$config\\precompiled-binaries",
-  "https://github.com/Flangvik/SharpCollection": "$config\\SharpCollection"
+  "https://github.com/Flangvik/SharpCollection": "$config\\SharpCollection",
+  "https://github.com/RykerWilder/rockyou.txt": "$config\\rockyou.txt",
 }
