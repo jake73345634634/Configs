@@ -108,7 +108,7 @@
 			<AutoLogon>
 				<Username>Pentest</Username>
 				<Enabled>true</Enabled>
-				<LogonCount>1</LogonCount>
+				<LogonCount>3</LogonCount>
 				<Password>
 					<Value></Value>
 					<PlainText>true</PlainText>
@@ -651,15 +651,41 @@ function Write-Log {
     Write-Host $logMessage
 }
 
+function Invoke-WithRetry {
+    param(
+        [ScriptBlock]$ScriptBlock,
+        [string]$Description,
+        [string]$LogFile,
+        [int]$MaxRetries = 2,
+        [int]$DelaySeconds = 10
+    )
+
+    for ($attempt = 1; $attempt -le ($MaxRetries + 1); $attempt++) {
+        try {
+            return &amp; $ScriptBlock
+        }
+        catch {
+            if ($attempt -gt $MaxRetries) {
+                Write-Log "Failed after $($MaxRetries + 1) attempts: $Description - $_" -LogFile $LogFile -IsError
+                throw
+            }
+            Write-Log "Attempt $attempt failed: $Description - $_ (retrying in ${DelaySeconds}s)" -LogFile $LogFile
+            Start-Sleep -Seconds $DelaySeconds
+        }
+    }
+}
+
 function Get-RemoteJson {
     param(
         [string]$Url,
         [string]$LogFile
     )
-    
+
     try {
         Write-Log "Fetching: $Url" -LogFile $LogFile
-        $response = Invoke-RestMethod -Uri $Url -ErrorAction Stop
+        $response = Invoke-WithRetry -Description "Fetch $Url" -LogFile $LogFile -ScriptBlock {
+            Invoke-RestMethod -Uri $Url -ErrorAction Stop
+        }
         return $response
     }
     catch {
@@ -822,7 +848,13 @@ function Install-PowerShellModules {
     
     foreach ($module in $modules) {
         Write-Log "Installing module: $module" -LogFile $LogFile
-        Install-Module -Name $module -Scope CurrentUser -ErrorAction Continue | Out-File -FilePath $LogFile -Append -Encoding Ascii
+        try {
+            Invoke-WithRetry -Description "Install module $module" -LogFile $LogFile -ScriptBlock {
+                Install-Module -Name $module -Scope CurrentUser -ErrorAction Stop | Out-File -FilePath $LogFile -Append -Encoding Ascii
+            }
+        } catch {
+            Write-Log "Skipping module: $module" -LogFile $LogFile -IsError
+        }
     }
 }
 
@@ -840,7 +872,13 @@ function Install-WindowsCapabilities {
     
     foreach ($capability in $capabilities) {
         Write-Log "Adding capability: $capability" -LogFile $LogFile
-        Add-WindowsCapability -Name $capability -Online -ErrorAction Continue | Out-File -FilePath $LogFile -Append -Encoding Ascii
+        try {
+            Invoke-WithRetry -Description "Add capability $capability" -LogFile $LogFile -ScriptBlock {
+                Add-WindowsCapability -Name $capability -Online -ErrorAction Stop | Out-File -FilePath $LogFile -Append -Encoding Ascii
+            }
+        } catch {
+            Write-Log "Skipping capability: $capability" -LogFile $LogFile -IsError
+        }
     }
 }
 
@@ -879,9 +917,9 @@ function Install-WingetApplications {
     foreach ($app in $applications.PSObject.Properties) {
         $appId = $app.Name
         $appArgs = $app.Value
-        
+
         Write-Log "Installing: $appId $appArgs" -LogFile $LogFile
-        
+
         $arguments = @(
             "install",
             "--exact",
@@ -891,12 +929,22 @@ function Install-WingetApplications {
             "--accept-source-agreements",
             "--source", "winget"
         )
-        
+
         if ($appArgs -and $appArgs -ne "") {
             $arguments += @("--override", $appArgs)
         }
-        
-        &amp; $wingetExe @arguments | Out-File -FilePath $LogFile -Append -Encoding Ascii
+
+        try {
+            Invoke-WithRetry -Description "Install winget app $appId" -LogFile $LogFile -ScriptBlock {
+                $output = &amp; $wingetExe @arguments 2&gt;&amp;1 | Out-String
+                $output | Out-File -FilePath $LogFile -Append -Encoding Ascii
+                if ($LASTEXITCODE -ne 0 -and $LASTEXITCODE -ne $null) {
+                    throw "winget exited with code $LASTEXITCODE"
+                }
+            }
+        } catch {
+            Write-Log "Skipping winget app: $appId" -LogFile $LogFile -IsError
+        }
     }
 }
 
@@ -931,17 +979,48 @@ function Install-Repositories {
         '$azure'            = $ToolDirs.Azure.FullName
     }
     
+    $pythonExe = "$env:LOCALAPPDATA\Programs\Python\Python313\python.exe"
+
     foreach ($repo in $repositories.PSObject.Properties) {
         $repoUrl = $repo.Name
         $destination = $repo.Value
-        
+
         # Replace placeholders
         foreach ($placeholder in $toolDirMap.Keys) {
             $destination = $destination -replace [regex]::Escape($placeholder), $toolDirMap[$placeholder]
         }
-        
+
         Write-Log "Cloning: $repoUrl -&gt; $destination" -LogFile $LogFile
-        &amp; $gitExe clone $repoUrl $destination 2&gt;&amp;1 | Out-File -FilePath $LogFile -Append -Encoding Ascii
+        try {
+            Invoke-WithRetry -Description "Clone $repoUrl" -LogFile $LogFile -ScriptBlock {
+                if (Test-Path $destination) {
+                    Remove-Item -Path $destination -Recurse -Force -ErrorAction SilentlyContinue
+                }
+                $output = &amp; $gitExe clone $repoUrl $destination 2&gt;&amp;1 | Out-String
+                $output | Out-File -FilePath $LogFile -Append -Encoding Ascii
+                if ($LASTEXITCODE -ne 0) {
+                    throw "git clone exited with code $LASTEXITCODE"
+                }
+            }
+        } catch {
+            Write-Log "Skipping repo: $repoUrl" -LogFile $LogFile -IsError
+            continue
+        }
+
+        # If the repo has a requirements.txt, create a venv and install dependencies
+        $requirementsFile = Join-Path $destination "requirements.txt"
+        if ((Test-Path $requirementsFile) -and (Test-Path $pythonExe)) {
+            Write-Log "Installing Python dependencies for: $repoUrl" -LogFile $LogFile
+            try {
+                $venvPath = Join-Path $destination ".venv"
+                &amp; $pythonExe -m venv $venvPath 2&gt;&amp;1 | Out-File -FilePath $LogFile -Append -Encoding Ascii
+                $pipExe = Join-Path $venvPath "Scripts\pip.exe"
+                &amp; $pipExe install -r $requirementsFile 2&gt;&amp;1 | Out-File -FilePath $LogFile -Append -Encoding Ascii
+                Write-Log "Python dependencies installed for: $(Split-Path $destination -Leaf)" -LogFile $LogFile
+            } catch {
+                Write-Log "Failed to install Python dependencies for $repoUrl : $_" -LogFile $LogFile -IsError
+            }
+        }
     }
 }
 
@@ -984,13 +1063,15 @@ function Install-Files {
             New-Item -Path $destinationDir -ItemType Directory -Force | Out-Null
         }
         
+        Write-Log "Downloading: $fileUrl -&gt; $destination" -LogFile $LogFile
         try {
-            Write-Log "Downloading: $fileUrl -&gt; $destination" -LogFile $LogFile
-            Invoke-WebRequest -Uri $fileUrl -OutFile $destination -ErrorAction Stop
+            Invoke-WithRetry -Description "Download $fileUrl" -LogFile $LogFile -ScriptBlock {
+                Invoke-WebRequest -Uri $fileUrl -OutFile $destination -ErrorAction Stop
+            }
             Write-Log "Successfully downloaded: $(Split-Path -Path $destination -Leaf)" -LogFile $LogFile
         }
         catch {
-            Write-Log "Failed to download $fileUrl : $_" -LogFile $LogFile -IsError
+            Write-Log "Skipping download: $fileUrl" -LogFile $LogFile -IsError
         }
     }
 }
@@ -1055,18 +1136,33 @@ function Write-ContainerLog {
 Write-ContainerLog "=== Container Installation Stage 2 ==="
 
 # Download and install Docker Desktop
+$dockerUri = [uri]::New("https://desktop.docker.com/win/main/amd64/Docker%20Desktop%20Installer.exe")
+$dockerInstaller = "$env:TEMP\DockerDesktopInstaller.exe"
+$dockerDownloaded = $false
+
+for ($attempt = 1; $attempt -le 3; $attempt++) {
+    try {
+        Write-ContainerLog "Downloading Docker Desktop (attempt $attempt/3)..."
+        $webClient = [System.Net.WebClient]::New()
+        $webClient.DownloadFile($dockerUri, $dockerInstaller)
+        $webClient.Dispose()
+        $dockerDownloaded = $true
+        break
+    }
+    catch {
+        Write-ContainerLog "Download attempt $attempt failed: $_"
+        if ($attempt -lt 3) { Start-Sleep -Seconds 10 }
+    }
+}
+
+if (-not $dockerDownloaded) {
+    Write-ContainerLog "ERROR: Failed to download Docker Desktop after 3 attempts"
+    exit 1
+}
+
 try {
-    Write-ContainerLog "Downloading Docker Desktop..."
-    $dockerUri = [uri]::New("https://desktop.docker.com/win/main/amd64/Docker%20Desktop%20Installer.exe")
-    $dockerInstaller = "$env:TEMP\DockerDesktopInstaller.exe"
-    
-    $webClient = [System.Net.WebClient]::New()
-    $webClient.DownloadFile($dockerUri, $dockerInstaller)
-    $webClient.Dispose()
-    
     Write-ContainerLog "Installing Docker Desktop..."
     Start-Process -FilePath $dockerInstaller -ArgumentList "install", "--quiet", "--accept-license" -Wait -NoNewWindow
-    
     Remove-Item -LiteralPath $dockerInstaller -ErrorAction SilentlyContinue
     Write-ContainerLog "Docker Desktop installed"
 }
@@ -1128,8 +1224,19 @@ if (Test-Path $containersFile) {
     Get-Content -Path $containersFile | ForEach-Object {
         $container = $_.Trim()
         if ($container) {
-            Write-ContainerLog "Pulling container: $container"
-            &amp; $dockerExe pull $container 2&gt;&amp;1 | Out-File -FilePath $logFile -Append -Encoding Ascii
+            $pulled = $false
+            for ($attempt = 1; $attempt -le 3; $attempt++) {
+                Write-ContainerLog "Pulling container: $container (attempt $attempt/3)"
+                &amp; $dockerExe pull $container 2&gt;&amp;1 | Out-File -FilePath $logFile -Append -Encoding Ascii
+                if ($LASTEXITCODE -eq 0) {
+                    $pulled = $true
+                    break
+                }
+                if ($attempt -lt 3) { Start-Sleep -Seconds 10 }
+            }
+            if (-not $pulled) {
+                Write-ContainerLog "ERROR: Failed to pull $container after 3 attempts"
+            }
         }
     }
 }
@@ -1151,28 +1258,6 @@ $readmeContent += ""
 $readmeContent += "Generated: $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')"
 $readmeContent += ""
 
-# Helper function for timeouts
-function Invoke-WithTimeout {
-    param(
-        [ScriptBlock]$ScriptBlock,
-        [int]$TimeoutSeconds = 30,
-        [Object[]]$ArgumentList = @()  # Add this parameter
-    )
-    
-    $job = Start-Job -ScriptBlock $ScriptBlock -ArgumentList $ArgumentList  # Pass it here
-    Wait-Job -Job $job -Timeout $TimeoutSeconds | Out-Null
-    
-    if ($job.State -eq 'Running') {
-        Stop-Job -Job $job
-        Remove-Job -Job $job -Force
-        return $null
-    }
-    
-    $result = Receive-Job -Job $job
-    Remove-Job -Job $job -Force
-    return $result
-}
-
 # Check PowerShell Modules
 $readmeContent += "[*] PowerShell Modules"
 $modulesFile = "$env:SystemRoot\Setup\Scripts\ModulesList.txt"
@@ -1181,18 +1266,14 @@ if (Test-Path $modulesFile) {
         $moduleName = $_.Trim()
         if ($moduleName) {
             try {
-                $installed = Invoke-WithTimeout -TimeoutSeconds 10 -ScriptBlock {
-                    param($name)
-                    Get-Module -ListAvailable -Name $name -ErrorAction SilentlyContinue
-                } -ArgumentList $moduleName
-                
+                $installed = Get-Module -ListAvailable -Name $moduleName -ErrorAction SilentlyContinue
                 if ($installed) {
                     $readmeContent += "[+] $moduleName"
                 } else {
                     $readmeContent += "[-] $moduleName"
                 }
             } catch {
-                $readmeContent += "[?] $moduleName (check timed out)"
+                $readmeContent += "[-] $moduleName"
             }
         }
     }
@@ -1207,18 +1288,14 @@ if (Test-Path $capabilitiesFile) {
         $capabilityName = $_.Trim()
         if ($capabilityName) {
             try {
-                $capability = Invoke-WithTimeout -TimeoutSeconds 10 -ScriptBlock {
-                    param($name)
-                    Get-WindowsCapability -Online -Name $name -ErrorAction SilentlyContinue
-                } -ArgumentList $capabilityName
-                
+                $capability = Get-WindowsCapability -Online -Name $capabilityName -ErrorAction SilentlyContinue
                 if ($capability -and $capability.State -eq "Installed") {
                     $readmeContent += "[+] $capabilityName"
                 } else {
                     $readmeContent += "[-] $capabilityName"
                 }
             } catch {
-                $readmeContent += "[?] $capabilityName (check timed out)"
+                $readmeContent += "[-] $capabilityName"
             }
         }
     }
@@ -1234,18 +1311,14 @@ if ((Test-Path $wingetFile) -and (Test-Path $wingetExe)) {
         $appId = $_.Trim()
         if ($appId) {
             try {
-                $result = Invoke-WithTimeout -TimeoutSeconds 15 -ScriptBlock {
-                    param($exe, $id)
-                    &amp; $exe list --id $id --exact 2&gt;&amp;1 | Out-String
-                } -ArgumentList $wingetExe, $appId
-                
-                if ($result -and $result -match [regex]::Escape($appId)) {
+                $result = &amp; $wingetExe list --id $appId --exact --accept-source-agreements 2&gt;&amp;1 | Out-String
+                if ($result -match [regex]::Escape($appId)) {
                     $readmeContent += "[+] $appId"
                 } else {
                     $readmeContent += "[-] $appId"
                 }
             } catch {
-                $readmeContent += "[?] $appId (check timed out)"
+                $readmeContent += "[-] $appId"
             }
         }
     }
@@ -1263,7 +1336,7 @@ if (Test-Path $reposFile) {
             if ($parts.Count -eq 2) {
                 $repoUrl = $parts[0]
                 $repoPath = $parts[1]
-                
+
                 $gitFolder = Join-Path $repoPath ".git"
                 if ((Test-Path $repoPath) -and (Test-Path $gitFolder)) {
                     $readmeContent += "[+] $repoUrl"
@@ -1287,7 +1360,7 @@ if (Test-Path $filesFile) {
             if ($parts.Count -eq 2) {
                 $fileUrl = $parts[0]
                 $filePath = $parts[1]
-                
+
                 if ((Test-Path $filePath) -and ((Get-Item $filePath).Length -gt 0)) {
                     $readmeContent += "[+] $fileUrl"
                 } else {
@@ -1300,46 +1373,32 @@ if (Test-Path $filesFile) {
 $readmeContent += ""
 
 # Check Containers
+$readmeContent += "[*] Container Images"
 $dockerProcess = Get-Process "Docker Desktop" -ErrorAction SilentlyContinue
 if (-not $dockerProcess) {
-    $readmeContent += "[*] Starting Docker Desktop..."
     Start-Process $dockerDesktopExe -ErrorAction SilentlyContinue
-    
-    # Wait for Docker to be ready
-    $dockerReady = Invoke-WithTimeout -TimeoutSeconds 60 -ScriptBlock {
-        param($exe)
-        $maxAttempts = 30
-        for ($i = 0; $i -lt $maxAttempts; $i++) {
-            try {
-                $result = &amp; $exe info 2&gt;&amp;1
-                if ($LASTEXITCODE -eq 0) {
-                    return $true
-                }
-            } catch {}
-            Start-Sleep -Seconds 2
-        }
-        return $false
-    } -ArgumentList $dockerExe
+    $dockerDeadline = [datetime]::Now.AddMinutes(2)
+    while ([datetime]::Now -lt $dockerDeadline) {
+        try {
+            &amp; $dockerExe info 2&gt;&amp;1 | Out-Null
+            if ($LASTEXITCODE -eq 0) { break }
+        } catch {}
+        Start-Sleep -Seconds 2
+    }
 }
-
-$readmeContent += "[*] Container Images"
 if (Test-Path $containersFile) {
     Get-Content -Path $containersFile | ForEach-Object {
         $container = $_.Trim()
         if ($container) {
             try {
-                $result = Invoke-WithTimeout -TimeoutSeconds 10 -ScriptBlock {
-                    param($exe, $img)
-                    &amp; $exe images $img --format "{{.Repository}}:{{.Tag}}" 2&gt;&amp;1 | Out-String
-                } -ArgumentList $dockerExe, $container
-                
-                if ($result -and $result -match [regex]::Escape($container)) {
+                $result = &amp; $dockerExe images $container --format "{{.Repository}}:{{.Tag}}" 2&gt;&amp;1 | Out-String
+                if ($result -match [regex]::Escape($container)) {
                     $readmeContent += "[+] $container"
                 } else {
                     $readmeContent += "[-] $container"
                 }
             } catch {
-                $readmeContent += "[?] $container (check timed out)"
+                $readmeContent += "[-] $container"
             }
         }
     }
@@ -1775,9 +1834,6 @@ $scripts = @(
 		</File>
 		<File path="C:\Windows\Setup\Scripts\FirstLogon.ps1">
 $scripts = @(
-	{
-		Set-ItemProperty -LiteralPath 'Registry::HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon' -Name 'AutoLogonCount' -Type 'DWord' -Force -Value 0;
-	};
 	{
 		cmd.exe /c "rmdir C:\Windows.old";
 	};
