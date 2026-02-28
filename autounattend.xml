@@ -686,6 +686,11 @@ function Get-RemoteJson {
         $response = Invoke-WithRetry -Description "Fetch $Url" -LogFile $LogFile -ScriptBlock {
             Invoke-RestMethod -Uri $Url -ErrorAction Stop
         }
+        # Invoke-RestMethod may return raw string for text/plain Content-Type
+        # (e.g. raw.githubusercontent.com). Explicitly parse if needed.
+        if ($response -is [string]) {
+            $response = $response | ConvertFrom-Json -ErrorAction Stop
+        }
         return $response
     }
     catch {
@@ -810,9 +815,13 @@ function Set-EdgeBookmarks {
     
     $registry.SetValue("ManagedFavorites", $favouritesJson)
     $registry.SetValue("ImportFavorites", 0)
+    $registry.SetValue("DefaultSearchProviderEnabled", 1, [Microsoft.Win32.RegistryValueKind]::DWord)
+    $registry.SetValue("DefaultSearchProviderName", "Google")
+    $registry.SetValue("DefaultSearchProviderSearchURL", "{google:baseURL}search?q={searchTerms}")
+    $registry.SetValue("DefaultSearchProviderSuggestURL", "{google:baseURL}complete/search?output=chrome&amp;q={searchTerms}")
     $registry.Dispose()
-    
-    Write-Log "Edge bookmarks configured" -LogFile $LogFile
+
+    Write-Log "Edge bookmarks and default search engine configured" -LogFile $LogFile
 }
 
 function New-ServiceShortcuts {
