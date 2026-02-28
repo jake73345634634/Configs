@@ -17,7 +17,7 @@ An official Windows 11 installation USB. See [here](https://www.microsoft.com/en
 
 $\color{Yellow}{\textsf{Note: Wi-Fi is not supported. You must use a wired connection. Ensure you are wired in prior to booting into the USB.}}$
 
-$\color{Yellow}{\textsf{Note: It may look complete at points, but do NOT press anything or close any windows until you see a SetupComplete.txt file on the desktop.}}$
+$\color{Yellow}{\textsf{Note: It may look complete at points, but do NOT press anything or close any windows until you see a README.md file on the desktop.}}$
 
 <h4>Post-Installation</h4>
 
