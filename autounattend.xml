@@ -1226,6 +1226,25 @@ while ($true) {
     Start-Sleep -Seconds 2
 }
 
+# Fix Docker credential store (docker-credential-desktop not in PATH for this session)
+$dockerConfigDir = "$env:USERPROFILE\.docker"
+$dockerConfigFile = "$dockerConfigDir\config.json"
+if (-not (Test-Path $dockerConfigDir)) {
+    New-Item -Path $dockerConfigDir -ItemType Directory -Force | Out-Null
+}
+if (Test-Path $dockerConfigFile) {
+    try {
+        $dockerConfig = Get-Content $dockerConfigFile -Raw | ConvertFrom-Json
+        $dockerConfig.credsStore = ""
+        $dockerConfig | ConvertTo-Json | Out-File $dockerConfigFile -Encoding Ascii
+    } catch {
+        '{"credsStore":""}' | Out-File $dockerConfigFile -Encoding Ascii
+    }
+} else {
+    '{"credsStore":""}' | Out-File $dockerConfigFile -Encoding Ascii
+}
+Write-ContainerLog "Docker credential store configured"
+
 # Pull container images
 $containersFile = "$env:SystemRoot\Setup\Scripts\ContainerList.txt"
 
@@ -1260,6 +1279,7 @@ Remove-Item -Path "$env:USERPROFILE\Desktop\Insomnia.lnk" -ErrorAction SilentlyC
 Write-ContainerLog "Generating installation report..."
 
 $readmeContent = @()
+$failedCommands = @()
 $readmeContent += "=" * 80
 $readmeContent += "Windows 11 Pentesting Environment - Installation Report"
 $readmeContent += "=" * 80
@@ -1280,9 +1300,11 @@ if (Test-Path $modulesFile) {
                     $readmeContent += "[+] $moduleName"
                 } else {
                     $readmeContent += "[-] $moduleName"
+                    $failedCommands += "Install-Module -Name '$moduleName' -Scope CurrentUser -Force"
                 }
             } catch {
                 $readmeContent += "[-] $moduleName"
+                $failedCommands += "Install-Module -Name '$moduleName' -Scope CurrentUser -Force"
             }
         }
     }
@@ -1302,9 +1324,11 @@ if (Test-Path $capabilitiesFile) {
                     $readmeContent += "[+] $capabilityName"
                 } else {
                     $readmeContent += "[-] $capabilityName"
+                    $failedCommands += "Add-WindowsCapability -Name '$capabilityName' -Online"
                 }
             } catch {
                 $readmeContent += "[-] $capabilityName"
+                $failedCommands += "Add-WindowsCapability -Name '$capabilityName' -Online"
             }
         }
     }
@@ -1325,9 +1349,11 @@ if ((Test-Path $wingetFile) -and (Test-Path $wingetExe)) {
                     $readmeContent += "[+] $appId"
                 } else {
                     $readmeContent += "[-] $appId"
+                    $failedCommands += "winget install --exact --id $appId --silent --accept-package-agreements --accept-source-agreements --source winget"
                 }
             } catch {
                 $readmeContent += "[-] $appId"
+                $failedCommands += "winget install --exact --id $appId --silent --accept-package-agreements --accept-source-agreements --source winget"
             }
         }
     }
@@ -1351,6 +1377,7 @@ if (Test-Path $reposFile) {
                     $readmeContent += "[+] $repoUrl"
                 } else {
                     $readmeContent += "[-] $repoUrl"
+                    $failedCommands += "git clone $repoUrl `"$repoPath`""
                 }
             }
         }
@@ -1374,6 +1401,7 @@ if (Test-Path $filesFile) {
                     $readmeContent += "[+] $fileUrl"
                 } else {
                     $readmeContent += "[-] $fileUrl"
+                    $failedCommands += "Invoke-WebRequest -Uri '$fileUrl' -OutFile `"$filePath`""
                 }
             }
         }
@@ -1405,14 +1433,28 @@ if (Test-Path $containersFile) {
                     $readmeContent += "[+] $container"
                 } else {
                     $readmeContent += "[-] $container"
+                    $failedCommands += "docker pull $container"
                 }
             } catch {
                 $readmeContent += "[-] $container"
+                $failedCommands += "docker pull $container"
             }
         }
     }
 }
 $readmeContent += ""
+
+# Add failed installation commands
+if ($failedCommands.Count -gt 0) {
+    $readmeContent += "=" * 80
+    $readmeContent += "Reinstall Failed Items"
+    $readmeContent += "=" * 80
+    $readmeContent += ""
+    foreach ($cmd in $failedCommands) {
+        $readmeContent += $cmd
+    }
+    $readmeContent += ""
+}
 
 # Add service information
 $readmeContent += "=" * 80
