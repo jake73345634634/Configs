@@ -108,7 +108,7 @@
 			<AutoLogon>
 				<Username>Pentest</Username>
 				<Enabled>true</Enabled>
-				<LogonCount>3</LogonCount>
+				<LogonCount>10</LogonCount>
 				<Password>
 					<Value></Value>
 					<PlainText>true</PlainText>
@@ -729,13 +729,16 @@ function New-DirectoryStructure {
     # Tools structure
     $toolsDir = New-Item -Path $Config.Directories.Desktop -Name "Tools" -ItemType Directory -Force
     $toolDirs = @{
-        Config           = New-Item -Path $toolsDir -Name "Config" -ItemType Directory -Force
+        AllTools         = New-Item -Path $toolsDir -Name "_ALL_TOOLS" -ItemType Directory -Force
+        Configuration    = New-Item -Path $toolsDir -Name "Configuration" -ItemType Directory -Force
         Evasion          = New-Item -Path $toolsDir -Name "Evasion" -ItemType Directory -Force
         Windows          = New-Item -Path $toolsDir -Name "Windows" -ItemType Directory -Force
-        ActiveDirectory  = New-Item -Path $toolsDir -Name "Active Directory" -ItemType Directory -Force
+        Linux            = New-Item -Path $toolsDir -Name "Linux" -ItemType Directory -Force
+        ActiveDirectory  = New-Item -Path $toolsDir -Name "Active_Directory" -ItemType Directory -Force
         Network          = New-Item -Path $toolsDir -Name "Network" -ItemType Directory -Force
         Kubernetes       = New-Item -Path $toolsDir -Name "Kubernetes" -ItemType Directory -Force
         Azure            = New-Item -Path $toolsDir -Name "Azure" -ItemType Directory -Force
+        Resources        = New-Item -Path $toolsDir -Name "Resources" -ItemType Directory -Force
     }
     
     return @{
@@ -829,7 +832,7 @@ function New-ServiceShortcuts {
     
     Write-Host "Creating service shortcuts..."
     
-    $bloodhoundBat = "docker compose -f $($ToolDirs.Config)\Win11-Pentest\bloodhound-docker-compose.yml -p bloodhound up -d"
+    $bloodhoundBat = "docker compose -f $($ToolDirs.AllTools)\Win11-Pentest\bloodhound-docker-compose.yml -p bloodhound up -d"
     $bloodhoundBat | Out-File -FilePath "$env:USERPROFILE\Desktop\Bloodhound.bat" -Encoding Ascii
     
     $cyberchefBat = "docker run -d -p 10001:80 ghcr.io/gchq/cyberchef"
@@ -976,28 +979,26 @@ function Install-Repositories {
     
     $repositories = Get-RemoteJson -Url $RemoteUrl -LogFile $LogFile
     if (-not $repositories) { return }
-    
-    # Replace placeholders in destination paths
-    $toolDirMap = @{
-        '$config'           = $ToolDirs.Config.FullName
-        '$evasion'          = $ToolDirs.Evasion.FullName
-        '$windows'          = $ToolDirs.Windows.FullName
-        '$active_directory' = $ToolDirs.ActiveDirectory.FullName
-        '$network'          = $ToolDirs.Network.FullName
-        '$kubernetes'       = $ToolDirs.Kubernetes.FullName
-        '$azure'            = $ToolDirs.Azure.FullName
+
+    $tagDirMap = @{
+        'Configuration'    = $ToolDirs.Configuration.FullName
+        'Evasion'          = $ToolDirs.Evasion.FullName
+        'Windows'          = $ToolDirs.Windows.FullName
+        'Linux'            = $ToolDirs.Linux.FullName
+        'Active_Directory' = $ToolDirs.ActiveDirectory.FullName
+        'Network'          = $ToolDirs.Network.FullName
+        'Kubernetes'       = $ToolDirs.Kubernetes.FullName
+        'Azure'            = $ToolDirs.Azure.FullName
+        'Resources'        = $ToolDirs.Resources.FullName
     }
-    
+    $allToolsDir = $ToolDirs.AllTools.FullName
+
     $pythonExe = "$env:LOCALAPPDATA\Programs\Python\Python313\python.exe"
 
-    foreach ($repo in $repositories.PSObject.Properties) {
-        $repoUrl = $repo.Name
-        $destination = $repo.Value
-
-        # Replace placeholders
-        foreach ($placeholder in $toolDirMap.Keys) {
-            $destination = $destination -replace [regex]::Escape($placeholder), $toolDirMap[$placeholder]
-        }
+    foreach ($repo in $repositories) {
+        $repoUrl = $repo.url
+        $repoName = $repo.name
+        $destination = Join-Path $allToolsDir $repoName
 
         Write-Log "Cloning: $repoUrl -&gt; $destination" -LogFile $LogFile
         try {
@@ -1025,9 +1026,20 @@ function Install-Repositories {
                 &amp; $pythonExe -m venv $venvPath 2&gt;&amp;1 | Out-File -FilePath $LogFile -Append -Encoding Ascii
                 $pipExe = Join-Path $venvPath "Scripts\pip.exe"
                 &amp; $pipExe install -r $requirementsFile 2&gt;&amp;1 | Out-File -FilePath $LogFile -Append -Encoding Ascii
-                Write-Log "Python dependencies installed for: $(Split-Path $destination -Leaf)" -LogFile $LogFile
+                Write-Log "Python dependencies installed for: $repoName" -LogFile $LogFile
             } catch {
                 Write-Log "Failed to install Python dependencies for $repoUrl : $_" -LogFile $LogFile -IsError
+            }
+        }
+
+        # Create symlinks in each tagged category folder
+        foreach ($tag in $repo.tags) {
+            if ($tagDirMap.ContainsKey($tag)) {
+                $linkPath = Join-Path $tagDirMap[$tag] $repoName
+                New-Item -ItemType SymbolicLink -Path $linkPath -Target $destination -Force | Out-Null
+                Write-Log "Symlinked: $linkPath -&gt; $destination" -LogFile $LogFile
+            } else {
+                Write-Log "Unknown tag '$tag' for repo $repoName" -LogFile $LogFile -IsError
             }
         }
     }
@@ -1045,42 +1057,46 @@ function Install-Files {
     
     $files = Get-RemoteJson -Url $RemoteUrl -LogFile $LogFile
     if (-not $files) { return }
-    
-    # Replace placeholders in destination paths
-    $toolDirMap = @{
-        '$config'           = $ToolDirs.Config.FullName
-        '$evasion'          = $ToolDirs.Evasion.FullName
-        '$windows'          = $ToolDirs.Windows.FullName
-        '$active_directory' = $ToolDirs.ActiveDirectory.FullName
-        '$network'          = $ToolDirs.Network.FullName
-        '$kubernetes'       = $ToolDirs.Kubernetes.FullName
-        '$azure'            = $ToolDirs.Azure.FullName
+
+    $tagDirMap = @{
+        'Configuration'    = $ToolDirs.Configuration.FullName
+        'Evasion'          = $ToolDirs.Evasion.FullName
+        'Windows'          = $ToolDirs.Windows.FullName
+        'Linux'            = $ToolDirs.Linux.FullName
+        'Active_Directory' = $ToolDirs.ActiveDirectory.FullName
+        'Network'          = $ToolDirs.Network.FullName
+        'Kubernetes'       = $ToolDirs.Kubernetes.FullName
+        'Azure'            = $ToolDirs.Azure.FullName
+        'Resources'        = $ToolDirs.Resources.FullName
     }
-    
-    foreach ($file in $files.PSObject.Properties) {
-        $fileUrl = $file.Name
-        $destination = $file.Value
-        
-        # Replace placeholders
-        foreach ($placeholder in $toolDirMap.Keys) {
-            $destination = $destination -replace [regex]::Escape($placeholder), $toolDirMap[$placeholder]
-        }
-        
-        # Ensure destination directory exists
-        $destinationDir = Split-Path -Path $destination -Parent
-        if (-not (Test-Path $destinationDir)) {
-            New-Item -Path $destinationDir -ItemType Directory -Force | Out-Null
-        }
-        
+    $allToolsDir = $ToolDirs.AllTools.FullName
+
+    foreach ($file in $files) {
+        $fileUrl = $file.url
+        $fileName = $file.name
+        $destination = Join-Path $allToolsDir $fileName
+
         Write-Log "Downloading: $fileUrl -&gt; $destination" -LogFile $LogFile
         try {
             Invoke-WithRetry -Description "Download $fileUrl" -LogFile $LogFile -ScriptBlock {
                 Invoke-WebRequest -Uri $fileUrl -OutFile $destination -ErrorAction Stop
             }
-            Write-Log "Successfully downloaded: $(Split-Path -Path $destination -Leaf)" -LogFile $LogFile
+            Write-Log "Successfully downloaded: $fileName" -LogFile $LogFile
         }
         catch {
             Write-Log "Skipping download: $fileUrl" -LogFile $LogFile -IsError
+            continue
+        }
+
+        # Create symlinks in each tagged category folder
+        foreach ($tag in $file.tags) {
+            if ($tagDirMap.ContainsKey($tag)) {
+                $linkPath = Join-Path $tagDirMap[$tag] $fileName
+                New-Item -ItemType SymbolicLink -Path $linkPath -Target $destination -Force | Out-Null
+                Write-Log "Symlinked: $linkPath -&gt; $destination" -LogFile $LogFile
+            } else {
+                Write-Log "Unknown tag '$tag' for file $fileName" -LogFile $LogFile -IsError
+            }
         }
     }
 }
@@ -1476,6 +1492,11 @@ $readmeContent | Out-File -FilePath $readmePath -Encoding Ascii
 Write-ContainerLog "Installation report created at: $readmePath"
 Write-ContainerLog "=== Container Installation Complete ==="
 
+# Disable autologon now that setup is finished
+reg.exe add "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon" /v AutoAdminLogon /t REG_SZ /d 0 /f
+reg.exe delete "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon" /v DefaultPassword /f 2>$null
+reg.exe delete "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon" /v AutoLogonCount /f 2>$null
+
 # Final reboot
 Restart-Computer -Force
 '@
@@ -1502,50 +1523,24 @@ Restart-Computer -Force
         $capabilities | Out-File -FilePath (Join-Path $SetupScriptsPath "CapabilitiesList.txt") -Encoding Ascii
     }
     
+    $allToolsDir = $toolDirs.AllTools.FullName
+
     $repositories = Get-RemoteJson -Url $Config.RemoteUrls.Repositories -LogFile $LogFile
     if ($repositories) {
-        $toolDirMap = @{
-            '$config'           = $toolDirs.Config.FullName
-            '$evasion'          = $toolDirs.Evasion.FullName
-            '$windows'          = $toolDirs.Windows.FullName
-            '$active_directory' = $toolDirs.ActiveDirectory.FullName
-            '$network'          = $toolDirs.Network.FullName
-            '$kubernetes'       = $toolDirs.Kubernetes.FullName
-            '$azure'            = $toolDirs.Azure.FullName
-        }
-        
         $reposList = @()
-        foreach ($repo in $repositories.PSObject.Properties) {
-            $repoUrl = $repo.Name
-            $destination = $repo.Value
-            foreach ($placeholder in $toolDirMap.Keys) {
-                $destination = $destination -replace [regex]::Escape($placeholder), $toolDirMap[$placeholder]
-            }
-            $reposList += "$repoUrl|$destination"
+        foreach ($repo in $repositories) {
+            $destination = Join-Path $allToolsDir $repo.name
+            $reposList += "$($repo.url)|$destination"
         }
         $reposList | Out-File -FilePath (Join-Path $SetupScriptsPath "RepositoriesList.txt") -Encoding Ascii
     }
-    
+
     $files = Get-RemoteJson -Url $Config.RemoteUrls.Files -LogFile $LogFile
     if ($files) {
-        $toolDirMap = @{
-            '$config'           = $toolDirs.Config.FullName
-            '$evasion'          = $toolDirs.Evasion.FullName
-            '$windows'          = $toolDirs.Windows.FullName
-            '$active_directory' = $toolDirs.ActiveDirectory.FullName
-            '$network'          = $toolDirs.Network.FullName
-            '$kubernetes'       = $toolDirs.Kubernetes.FullName
-            '$azure'            = $toolDirs.Azure.FullName
-        }
-        
         $filesList = @()
-        foreach ($file in $files.PSObject.Properties) {
-            $fileUrl = $file.Name
-            $destination = $file.Value
-            foreach ($placeholder in $toolDirMap.Keys) {
-                $destination = $destination -replace [regex]::Escape($placeholder), $toolDirMap[$placeholder]
-            }
-            $filesList += "$fileUrl|$destination"
+        foreach ($file in $files) {
+            $destination = Join-Path $allToolsDir $file.name
+            $filesList += "$($file.url)|$destination"
         }
         $filesList | Out-File -FilePath (Join-Path $SetupScriptsPath "FilesList.txt") -Encoding Ascii
     }
@@ -1662,6 +1657,9 @@ $scripts = @(
 	};
 	{
 		reg.exe add "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System" /v EnableLUA /t REG_DWORD /d 0 /f
+	};
+	{
+		reg.exe add "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\AppModelUnlock" /v AllowDevelopmentWithoutDevLicense /t REG_DWORD /d 1 /f
 	};
 	{
 		reg.exe add "HKLM\SYSTEM\CurrentControlSet\Control\FileSystem" /v LongPathsEnabled /t REG_DWORD /d 1 /f

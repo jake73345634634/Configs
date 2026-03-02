@@ -1,10 +1,10 @@
-{
-    "https://repo1.maven.org/maven2/org/python/jython-standalone/2.7.4/jython-standalone-2.7.4.jar": "$config\\jython-standalone-2.7.4.jar",
-    "https://github.com/jpillora/chisel/releases/download/v1.11.3/chisel_1.11.3_linux_386.gz": "$config\\chisel_1.11.3_linux_386.gz",
-    "https://github.com/jpillora/chisel/releases/download/v1.11.3/chisel_1.11.3_windows_amd64.zip": "$config\\chisel_1.11.3_windows_amd64.zip",
-    "https://github.com/peass-ng/PEASS-ng/releases/latest/download/linpeas.sh": "$config\\linpeas.sh",
-    "https://github.com/peass-ng/PEASS-ng/releases/latest/download/linpeas_linux_amd64": "$config\\linpeas",
-    "https://github.com/peass-ng/PEASS-ng/releases/latest/download/winPEAS.bat": "$config\\winpeas.bat",
-    "https://github.com/peass-ng/PEASS-ng/releases/latest/download/winPEASx64.exe": "$config\\winpeas.exe",
-    "https://hashcat.net/files/hashcat-7.1.2.7z": "$config\\hashcat-7.1.2.7z"
-}
+[
+  { "url": "https://repo1.maven.org/maven2/org/python/jython-standalone/2.7.4/jython-standalone-2.7.4.jar", "name": "jython-standalone-2.7.4.jar", "tags": ["Resources"] },
+  { "url": "https://github.com/jpillora/chisel/releases/download/v1.11.3/chisel_1.11.3_linux_386.gz", "name": "chisel_1.11.3_linux_386.gz", "tags": ["Linux"] },
+  { "url": "https://github.com/jpillora/chisel/releases/download/v1.11.3/chisel_1.11.3_windows_amd64.zip", "name": "chisel_1.11.3_windows_amd64.zip", "tags": ["Windows"] },
+  { "url": "https://github.com/peass-ng/PEASS-ng/releases/latest/download/linpeas.sh", "name": "linpeas.sh", "tags": ["Linux"] },
+  { "url": "https://github.com/peass-ng/PEASS-ng/releases/latest/download/linpeas_linux_amd64", "name": "linpeas", "tags": ["Linux"] },
+  { "url": "https://github.com/peass-ng/PEASS-ng/releases/latest/download/winPEAS.bat", "name": "winpeas.bat", "tags": ["Windows"] },
+  { "url": "https://github.com/peass-ng/PEASS-ng/releases/latest/download/winPEASx64.exe", "name": "winpeas.exe", "tags": ["Windows"] },
+  { "url": "https://hashcat.net/files/hashcat-7.1.2.7z", "name": "hashcat-7.1.2.7z", "tags": ["Resources"] }
+]
