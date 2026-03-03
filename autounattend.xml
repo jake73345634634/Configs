@@ -988,21 +988,24 @@ function Install-Repositories {
     param(
         [string]$RemoteUrl,
         [string]$LogFile,
-        [hashtable]$ToolDirs
+        [hashtable]$ToolDirs,
+        [string]$SetupScriptsPath
     )
-    
+
     Write-Host "`nCloning repositories..."
     Write-Log "=== Repository Cloning ===" -LogFile $LogFile
-    
+
     $gitExe = "$env:ProgramFiles\Git\cmd\git.exe"
-    
+
     if (-not (Test-Path $gitExe)) {
         Write-Log "Git not found at: $gitExe" -LogFile $LogFile -IsError
         return
     }
-    
+
     $repositories = Get-RemoteJson -Url $RemoteUrl -LogFile $LogFile
     if (-not $repositories) { return }
+
+    $reposList = @()
 
     $tagDirMap = @{
         'Configuration'    = $ToolDirs.Configuration.FullName
@@ -1066,6 +1069,13 @@ function Install-Repositories {
                 Write-Log "Unknown tag '$tag' for repo $repoName" -LogFile $LogFile -IsError
             }
         }
+
+        $tags = ($repo.tags -join ',')
+        $reposList += "$repoUrl|$destination|$repoName|$tags"
+    }
+
+    if ($SetupScriptsPath -and $reposList.Count -gt 0) {
+        $reposList | Out-File -FilePath (Join-Path $SetupScriptsPath "RepositoriesList.txt") -Encoding Ascii
     }
 }
 
@@ -1073,14 +1083,17 @@ function Install-Files {
     param(
         [string]$RemoteUrl,
         [string]$LogFile,
-        [hashtable]$ToolDirs
+        [hashtable]$ToolDirs,
+        [string]$SetupScriptsPath
     )
-    
+
     Write-Host "`nDownloading files..."
     Write-Log "=== File Downloads ===" -LogFile $LogFile
-    
+
     $files = Get-RemoteJson -Url $RemoteUrl -LogFile $LogFile
     if (-not $files) { return }
+
+    $filesList = @()
 
     $tagDirMap = @{
         'Configuration'    = $ToolDirs.Configuration.FullName
@@ -1112,15 +1125,26 @@ function Install-Files {
             continue
         }
 
-        # Extract archives (.zip / .gz) and remove the original
-        if ($fileName -match '\.(zip|gz)$') {
+        # Extract archives (.zip / .gz / .7z) and remove the original
+        if ($fileName -match '\.(zip|gz|7z)$') {
             try {
                 if ($fileName -match '\.zip$') {
                     $extractDir = Join-Path $allToolsDir ($fileName -replace '\.zip$', '')
                     Expand-Archive -Path $destination -DestinationPath $extractDir -Force
                     Remove-Item -LiteralPath $destination -Force
-                    $destination = $extractDir
-                    $fileName = $fileName -replace '\.zip$', ''
+                    # Flatten single-file archives
+                    $items = Get-ChildItem -Path $extractDir -Force
+                    if ($items.Count -eq 1 -and -not $items[0].PSIsContainer) {
+                        $singleFile = $items[0]
+                        $flatPath = Join-Path $allToolsDir $singleFile.Name
+                        Move-Item -Path $singleFile.FullName -Destination $flatPath -Force
+                        Remove-Item -Path $extractDir -Force
+                        $destination = $flatPath
+                        $fileName = $singleFile.Name
+                    } else {
+                        $destination = $extractDir
+                        $fileName = $fileName -replace '\.zip$', ''
+                    }
                 } elseif ($fileName -match '\.gz$') {
                     Add-Type -AssemblyName System.IO.Compression -ErrorAction SilentlyContinue
                     $decompressedPath = Join-Path $allToolsDir ($fileName -replace '\.gz$', '')
@@ -1132,6 +1156,24 @@ function Install-Files {
                     Remove-Item -LiteralPath $destination -Force
                     $destination = $decompressedPath
                     $fileName = $fileName -replace '\.gz$', ''
+                } elseif ($fileName -match '\.7z$') {
+                    $sevenZip = "$env:ProgramFiles\7-Zip\7z.exe"
+                    $extractDir = Join-Path $allToolsDir ($fileName -replace '\.7z$', '')
+                    &amp; $sevenZip x $destination "-o$extractDir" -y 2&gt;&amp;1 | Out-File -FilePath $LogFile -Append -Encoding Ascii
+                    Remove-Item -LiteralPath $destination -Force
+                    # Flatten single-file archives
+                    $items = Get-ChildItem -Path $extractDir -Force
+                    if ($items.Count -eq 1 -and -not $items[0].PSIsContainer) {
+                        $singleFile = $items[0]
+                        $flatPath = Join-Path $allToolsDir $singleFile.Name
+                        Move-Item -Path $singleFile.FullName -Destination $flatPath -Force
+                        Remove-Item -Path $extractDir -Force
+                        $destination = $flatPath
+                        $fileName = $singleFile.Name
+                    } else {
+                        $destination = $extractDir
+                        $fileName = $fileName -replace '\.7z$', ''
+                    }
                 }
                 Write-Log "Extracted and removed archive: $($file.name)" -LogFile $LogFile
             }
@@ -1150,6 +1192,13 @@ function Install-Files {
                 Write-Log "Unknown tag '$tag' for file $fileName" -LogFile $LogFile -IsError
             }
         }
+
+        $tags = ($file.tags -join ',')
+        $filesList += "$fileUrl|$destination|$($file.name)|$tags"
+    }
+
+    if ($SetupScriptsPath -and $filesList.Count -gt 0) {
+        $filesList | Out-File -FilePath (Join-Path $SetupScriptsPath "FilesList.txt") -Encoding Ascii
     }
 }
 
@@ -1514,14 +1563,17 @@ $readmeContent += ""
 # Check Repositories
 $readmeContent += "[*] Repositories"
 $reposFile = "$env:SystemRoot\Setup\Scripts\RepositoriesList.txt"
+$toolsBase = "$env:USERPROFILE\Desktop\Tools"
 if (Test-Path $reposFile) {
     Get-Content -Path $reposFile | ForEach-Object {
         $line = $_.Trim()
         if ($line) {
             $parts = $line -split '\|'
-            if ($parts.Count -eq 2) {
+            if ($parts.Count -ge 2) {
                 $repoUrl = $parts[0]
                 $repoPath = $parts[1]
+                $repoName = if ($parts.Count -ge 3) { $parts[2] } else { Split-Path $repoPath -Leaf }
+                $tags = if ($parts.Count -ge 4 -and $parts[3]) { $parts[3] -split ',' } else { @() }
 
                 $gitFolder = Join-Path $repoPath ".git"
                 if ((Test-Path $repoPath) -and (Test-Path $gitFolder)) {
@@ -1529,6 +1581,12 @@ if (Test-Path $reposFile) {
                 } else {
                     $readmeContent += "[-] $repoUrl"
                     $failedCommands += "git clone $repoUrl `"$repoPath`""
+                }
+                foreach ($tag in $tags) {
+                    $linkPath = Join-Path $toolsBase "$tag\$repoName"
+                    if (-not (Test-Path $linkPath)) {
+                        $failedCommands += "New-Item -ItemType SymbolicLink -Path `"$linkPath`" -Target `"$repoPath`" -Force"
+                    }
                 }
             }
         }
@@ -1544,15 +1602,32 @@ if (Test-Path $filesFile) {
         $line = $_.Trim()
         if ($line) {
             $parts = $line -split '\|'
-            if ($parts.Count -eq 2) {
+            if ($parts.Count -ge 2) {
                 $fileUrl = $parts[0]
                 $filePath = $parts[1]
+                $originalName = if ($parts.Count -ge 3) { $parts[2] } else { Split-Path $filePath -Leaf }
+                $tags = if ($parts.Count -ge 4 -and $parts[3]) { $parts[3] -split ',' } else { @() }
+                $fileName = Split-Path $filePath -Leaf
 
-                if ((Test-Path $filePath) -and ((Get-Item $filePath).Length -gt 0)) {
+                if ((Test-Path $filePath) -and ((Get-Item $filePath).Length -gt 0 -or (Get-Item $filePath).PSIsContainer)) {
                     $readmeContent += "[+] $fileUrl"
                 } else {
                     $readmeContent += "[-] $fileUrl"
-                    $failedCommands += "Invoke-WebRequest -Uri '$fileUrl' -OutFile `"$filePath`""
+                    $downloadDest = Join-Path (Split-Path $filePath -Parent) $originalName
+                    $failedCommands += "Invoke-WebRequest -Uri '$fileUrl' -OutFile `"$downloadDest`""
+                    if ($originalName -match '\.zip$') {
+                        $failedCommands += "Expand-Archive -Path `"$downloadDest`" -DestinationPath `"$filePath`" -Force; Remove-Item -LiteralPath `"$downloadDest`" -Force"
+                    } elseif ($originalName -match '\.7z$') {
+                        $failedCommands += "&amp; `"`$env:ProgramFiles\7-Zip\7z.exe`" x `"$downloadDest`" `"-o$filePath`" -y; Remove-Item -LiteralPath `"$downloadDest`" -Force"
+                    } elseif ($originalName -match '\.gz$') {
+                        $failedCommands += "Add-Type -AssemblyName System.IO.Compression; `$gzIn = [System.IO.File]::OpenRead('$downloadDest'); `$gzStream = [System.IO.Compression.GZipStream]::new(`$gzIn, [System.IO.Compression.CompressionMode]::Decompress); `$fsOut = [System.IO.File]::Create('$filePath'); `$gzStream.CopyTo(`$fsOut); `$fsOut.Close(); `$gzStream.Close(); `$gzIn.Close(); Remove-Item -LiteralPath '$downloadDest' -Force"
+                    }
+                }
+                foreach ($tag in $tags) {
+                    $linkPath = Join-Path $toolsBase "$tag\$fileName"
+                    if (-not (Test-Path $linkPath)) {
+                        $failedCommands += "New-Item -ItemType SymbolicLink -Path `"$linkPath`" -Target `"$filePath`" -Force"
+                    }
                 }
             }
         }
@@ -1597,6 +1672,27 @@ $readmeContent += ""
 
 # Check Kali WSL
 $readmeContent += "[*] Kali WSL"
+$kaliCommandsFile = "$env:SystemRoot\Setup\Scripts\KaliCommandsList.txt"
+$kaliSetupCommands = @(
+    "wsl -d kali-linux -u root -- useradd -m -s /bin/bash pentest"
+    "wsl -d kali-linux -u root -- passwd -d pentest"
+    "wsl -d kali-linux -u root -- bash -c `"echo 'pentest ALL=(ALL) NOPASSWD: ALL' &gt; /etc/sudoers.d/pentest &amp;&amp; chmod 440 /etc/sudoers.d/pentest`""
+)
+$kaliConfigDir = "$env:USERPROFILE\Desktop\Tools\_ALL_TOOLS\Win11-Pentest\Configuration\Kali"
+if (Test-Path $kaliConfigDir) {
+    $driveLetter = $kaliConfigDir.Substring(0,1).ToLower()
+    $wslConfigPath = "/mnt/$driveLetter" + ($kaliConfigDir.Substring(2) -replace '\\', '/')
+    Get-ChildItem -Path $kaliConfigDir -File -Force | ForEach-Object {
+        $kaliSetupCommands += "wsl -d kali-linux -u root -- bash -c `"cp '$wslConfigPath/$($_.Name)' /root/ &amp;&amp; cp '$wslConfigPath/$($_.Name)' /home/pentest/ &amp;&amp; chown pentest:pentest '/home/pentest/$($_.Name)'`""
+    }
+}
+if (Test-Path $kaliCommandsFile) {
+    Get-Content -Path $kaliCommandsFile | ForEach-Object {
+        $cmd = $_.Trim()
+        if ($cmd) { $kaliSetupCommands += "wsl -d kali-linux -u pentest -- bash -c `"$cmd`"" }
+    }
+}
+
 if (Test-Path $wslExe) {
     $wslDistros = &amp; $wslExe -l -q 2&gt;&amp;1 | Out-String
     if ($wslDistros -match "kali-linux") {
@@ -1607,10 +1703,9 @@ if (Test-Path $wslExe) {
             $readmeContent += "[+] pentest user created"
         } else {
             $readmeContent += "[-] pentest user not found"
-            $failedCommands += "wsl -d kali-linux -u root -- useradd -m -s /bin/bash pentest"
+            $failedCommands += $kaliSetupCommands
         }
 
-        $kaliCommandsFile = "$env:SystemRoot\Setup\Scripts\KaliCommandsList.txt"
         if (Test-Path $kaliCommandsFile) {
             $cmdCount = (Get-Content -Path $kaliCommandsFile | Where-Object { $_.Trim() }).Count
             $readmeContent += "[*] $cmdCount command(s) configured from kali.json"
@@ -1618,10 +1713,12 @@ if (Test-Path $wslExe) {
     } else {
         $readmeContent += "[-] kali-linux distro not found"
         $failedCommands += "wsl --install -d kali-linux"
+        $failedCommands += $kaliSetupCommands
     }
 } else {
     $readmeContent += "[-] WSL not available"
     $failedCommands += "wsl --install"
+    $failedCommands += $kaliSetupCommands
 }
 $readmeContent += ""
 
@@ -1687,28 +1784,6 @@ Restart-Computer -Force
     if ($capabilities) {
         $capabilities | Out-File -FilePath (Join-Path $SetupScriptsPath "CapabilitiesList.txt") -Encoding Ascii
     }
-    
-    $allToolsDir = $toolDirs.AllTools.FullName
-
-    $repositories = Get-RemoteJson -Url $Config.RemoteUrls.Repositories -LogFile $LogFile
-    if ($repositories) {
-        $reposList = @()
-        foreach ($repo in $repositories) {
-            $destination = Join-Path $allToolsDir $repo.name
-            $reposList += "$($repo.url)|$destination"
-        }
-        $reposList | Out-File -FilePath (Join-Path $SetupScriptsPath "RepositoriesList.txt") -Encoding Ascii
-    }
-
-    $files = Get-RemoteJson -Url $Config.RemoteUrls.Files -LogFile $LogFile
-    if ($files) {
-        $filesList = @()
-        foreach ($file in $files) {
-            $destination = Join-Path $allToolsDir $file.name
-            $filesList += "$($file.url)|$destination"
-        }
-        $filesList | Out-File -FilePath (Join-Path $SetupScriptsPath "FilesList.txt") -Encoding Ascii
-    }
 
     $kaliCommands = Get-RemoteJson -Url $Config.RemoteUrls.KaliCommands -LogFile $LogFile
     if ($kaliCommands) {
@@ -1756,8 +1831,8 @@ Install-PowerShellModules -RemoteUrl $Config.RemoteUrls.PowerShellModules -LogFi
 Install-WindowsCapabilities -RemoteUrl $Config.RemoteUrls.WindowsCapabilities -LogFile $logs.Capabilities.FullName
 Install-WingetApplications -RemoteUrl $Config.RemoteUrls.WingetApplications -LogFile $logs.WinGet.FullName
 Invoke-WindowsActivation -LogFile $logs.Main.FullName
-Install-Repositories -RemoteUrl $Config.RemoteUrls.Repositories -LogFile $logs.Repositories.FullName -ToolDirs $toolDirs
-Install-Files -RemoteUrl $Config.RemoteUrls.Files -LogFile $logs.Files.FullName -ToolDirs $toolDirs
+Install-Repositories -RemoteUrl $Config.RemoteUrls.Repositories -LogFile $logs.Repositories.FullName -ToolDirs $toolDirs -SetupScriptsPath $Config.Directories.SetupScripts
+Install-Files -RemoteUrl $Config.RemoteUrls.Files -LogFile $logs.Files.FullName -ToolDirs $toolDirs -SetupScriptsPath $Config.Directories.SetupScripts
 Install-WSL -LogFile $logs.Main.FullName
 
 # Prepare container installation (requires reboot)
