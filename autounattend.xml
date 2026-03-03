@@ -821,8 +821,8 @@ function Set-EdgeBookmarks {
     $registry.SetValue("ImportFavorites", 0)
     $registry.SetValue("DefaultSearchProviderEnabled", 1, [Microsoft.Win32.RegistryValueKind]::DWord)
     $registry.SetValue("DefaultSearchProviderName", "Google")
-    $registry.SetValue("DefaultSearchProviderSearchURL", "{google:baseURL}search?q={searchTerms}")
-    $registry.SetValue("DefaultSearchProviderSuggestURL", "{google:baseURL}complete/search?output=chrome&amp;q={searchTerms}")
+    $registry.SetValue("DefaultSearchProviderSearchURL", "https://www.google.com/search?q={searchTerms}")
+    $registry.SetValue("DefaultSearchProviderSuggestURL", "https://www.google.com/complete/search?output=chrome&amp;q={searchTerms}")
     $registry.Dispose()
 
     Write-Log "Edge bookmarks and default search engine configured" -LogFile $LogFile
