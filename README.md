@@ -19,6 +19,8 @@ $\color{Yellow}{\textsf{Note: Wi-Fi is not supported. You must use a wired conne
 
 $\color{Yellow}{\textsf{Note: It may look complete at points, but do NOT press anything or close any windows until you see a README.md file on the desktop.}}$
 
+$\color{Yellow}{\textsf{Note: Sometimes you have to manually login (no password; just press enter) but do nothing after. I am trying to fix this.}}$
+
 <h4>Post-Installation</h4>
 
 - License Nessus

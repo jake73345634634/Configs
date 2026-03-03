@@ -1132,15 +1132,15 @@ function Install-Files {
                     $extractDir = Join-Path $allToolsDir ($fileName -replace '\.zip$', '')
                     Expand-Archive -Path $destination -DestinationPath $extractDir -Force
                     Remove-Item -LiteralPath $destination -Force
-                    # Flatten single-file archives
+                    # Flatten single-item archives
                     $items = Get-ChildItem -Path $extractDir -Force
-                    if ($items.Count -eq 1 -and -not $items[0].PSIsContainer) {
-                        $singleFile = $items[0]
-                        $flatPath = Join-Path $allToolsDir $singleFile.Name
-                        Move-Item -Path $singleFile.FullName -Destination $flatPath -Force
+                    if ($items.Count -eq 1) {
+                        $singleItem = $items[0]
+                        $flatPath = Join-Path $allToolsDir $singleItem.Name
+                        Move-Item -Path $singleItem.FullName -Destination $flatPath -Force
                         Remove-Item -Path $extractDir -Force
                         $destination = $flatPath
-                        $fileName = $singleFile.Name
+                        $fileName = $singleItem.Name
                     } else {
                         $destination = $extractDir
                         $fileName = $fileName -replace '\.zip$', ''
@@ -1161,15 +1161,15 @@ function Install-Files {
                     $extractDir = Join-Path $allToolsDir ($fileName -replace '\.7z$', '')
                     &amp; $sevenZip x $destination "-o$extractDir" -y 2&gt;&amp;1 | Out-File -FilePath $LogFile -Append -Encoding Ascii
                     Remove-Item -LiteralPath $destination -Force
-                    # Flatten single-file archives
+                    # Flatten single-item archives
                     $items = Get-ChildItem -Path $extractDir -Force
-                    if ($items.Count -eq 1 -and -not $items[0].PSIsContainer) {
-                        $singleFile = $items[0]
-                        $flatPath = Join-Path $allToolsDir $singleFile.Name
-                        Move-Item -Path $singleFile.FullName -Destination $flatPath -Force
+                    if ($items.Count -eq 1) {
+                        $singleItem = $items[0]
+                        $flatPath = Join-Path $allToolsDir $singleItem.Name
+                        Move-Item -Path $singleItem.FullName -Destination $flatPath -Force
                         Remove-Item -Path $extractDir -Force
                         $destination = $flatPath
-                        $fileName = $singleFile.Name
+                        $fileName = $singleItem.Name
                     } else {
                         $destination = $extractDir
                         $fileName = $fileName -replace '\.7z$', ''
@@ -1405,11 +1405,26 @@ $wslExe = "$env:SystemRoot\System32\wsl.exe"
 if (Test-Path $wslExe) {
     Write-ContainerLog "=== Kali WSL Configuration ==="
 
-    # Initialize distro (bypasses interactive first-launch)
-    Write-ContainerLog "Initializing kali-linux distro..."
-    &amp; $wslExe -d kali-linux -u root -- echo "Kali initialized" 2&gt;&amp;1 | Out-File -FilePath $logFile -Append -Encoding Ascii
+    # Wait for kali-linux distro to be available (wsl --install needs time after reboot)
+    $kaliReady = $false
+    $kaliDeadline = [datetime]::Now.AddMinutes(10)
+    Write-ContainerLog "Waiting for kali-linux distro to become available..."
+    while ([datetime]::Now -lt $kaliDeadline) {
+        $distroList = &amp; $wslExe -l -q 2&gt;&amp;1 | Out-String
+        if ($distroList -match "kali-linux") {
+            # Distro registered, try to initialize it
+            &amp; $wslExe -d kali-linux -u root -- echo "Kali initialized" 2&gt;&amp;1 | Out-File -FilePath $logFile -Append -Encoding Ascii
+            if ($LASTEXITCODE -eq 0) {
+                $kaliReady = $true
+                Write-ContainerLog "kali-linux distro is ready"
+                break
+            }
+        }
+        Write-ContainerLog "kali-linux not ready yet, retrying in 30 seconds..."
+        Start-Sleep -Seconds 30
+    }
 
-    if ($LASTEXITCODE -eq 0) {
+    if ($kaliReady) {
         # Create pentest user
         Write-ContainerLog "Creating pentest user..."
         &amp; $wslExe -d kali-linux -u root -- useradd -m -s /bin/bash pentest 2&gt;&amp;1 | Out-File -FilePath $logFile -Append -Encoding Ascii
@@ -1471,7 +1486,7 @@ if (Test-Path $wslExe) {
             Write-ContainerLog "Executed $kaliCmdCount Kali command(s)"
         }
     } else {
-        Write-ContainerLog "ERROR: Failed to initialize kali-linux distro"
+        Write-ContainerLog "ERROR: kali-linux distro not available after 10 minutes"
     }
 }
 
