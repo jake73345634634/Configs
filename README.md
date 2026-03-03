@@ -26,7 +26,6 @@ $\color{Yellow}{\textsf{Note: Sometimes you have to manually login (no password;
 - License Nessus
 - Add Nessus plugins
 - License BurpSuite
-- Add BurpSuite extensions
 
 ---
 <h4>Tools</h4>
@@ -162,11 +161,11 @@ $\color{Yellow}{\textsf{Note: Sometimes you have to manually login (no password;
 ---
 <h4>TODO</h4>
 
+- [ ] Add a Greenshot [configuration file](https://getgreenshot.org/faq/what-is-the-best-way-to-control-greenshots-configuration-at-install-time)
 - [ ] Add GNS3 and images for Cisco switches and routers, Fortinets, Dells
 - [ ] Add VMWare download and checksum verification
 - [ ] Add Kali VM download
 - [ ] License BurpSuite and Nessus
-- [ ] Add BurpSuite extensions
 - [ ] Add Nessus plugins
 - [ ] Figure out how to install Spotify via WinGet as it requires user context, not administrative context
 - [ ] Create better and consistent logs for everything
