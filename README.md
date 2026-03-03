@@ -161,7 +161,6 @@ $\color{Yellow}{\textsf{Note: It may look complete at points, but do NOT press a
 <h4>TODO</h4>
 
 - [ ] Add GNS3 and images for Cisco switches and routers, Fortinets, Dells
-- [ ] Create "Config" folder in this repo for... config
 - [ ] Add VMWare download and checksum verification
 - [ ] Add Kali VM download
 - [ ] License BurpSuite and Nessus

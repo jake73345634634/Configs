@@ -835,10 +835,10 @@ function New-ServiceShortcuts {
     
     $dockerStartBlock = @'
 @echo off
-net session >nul 2>&1 || (echo Run as administrator. & pause & exit /b 1)
+net session &gt;nul 2&gt;&amp;1 || (echo Run as administrator. &amp; pause &amp; exit /b 1)
 
 :: Start Docker Desktop if not running
-tasklist /FI "IMAGENAME eq Docker Desktop.exe" 2>NUL | find /I "Docker Desktop.exe" >NUL
+tasklist /FI "IMAGENAME eq Docker Desktop.exe" 2&gt;NUL | find /I "Docker Desktop.exe" &gt;NUL
 if %ERRORLEVEL% NEQ 0 (
     echo Starting Docker Desktop...
     start "" "%ProgramFiles%\Docker\Docker\Docker Desktop.exe"
@@ -847,19 +847,19 @@ if %ERRORLEVEL% NEQ 0 (
 :: Wait for Docker Engine to be ready
 echo Waiting for Docker Engine...
 :wait_docker
-docker info >nul 2>&1
+docker info &gt;nul 2&gt;&amp;1
 if %ERRORLEVEL% NEQ 0 (
-    timeout /t 2 /nobreak >nul
+    timeout /t 2 /nobreak &gt;nul
     goto wait_docker
 )
 echo Docker is ready.
 
 '@
 
-    $bloodhoundBat = $dockerStartBlock + "docker compose -f $($ToolDirs.AllTools)\Win11-Pentest\Configuration\Windows\bloodhound-docker-compose.yml -p bloodhound up -d`r`nif %ERRORLEVEL% NEQ 0 (echo. & echo ERROR: Failed to start Bloodhound containers. & pause)`r`n"
+    $bloodhoundBat = $dockerStartBlock + "docker compose -f $($ToolDirs.AllTools)\Win11-Pentest\Configuration\Windows\bloodhound-docker-compose.yml -p bloodhound up -d`r`nif %ERRORLEVEL% NEQ 0 (echo. &amp; echo ERROR: Failed to start Bloodhound containers. &amp; pause)`r`n"
     $bloodhoundBat | Out-File -FilePath "$env:USERPROFILE\Desktop\Bloodhound.bat" -Encoding Ascii
 
-    $cyberchefBat = $dockerStartBlock + "docker run -d -p 10001:80 ghcr.io/gchq/cyberchef`r`nif %ERRORLEVEL% NEQ 0 (echo. & echo ERROR: Failed to start CyberChef container. & pause)`r`n"
+    $cyberchefBat = $dockerStartBlock + "docker run -d -p 10001:80 ghcr.io/gchq/cyberchef`r`nif %ERRORLEVEL% NEQ 0 (echo. &amp; echo ERROR: Failed to start CyberChef container. &amp; pause)`r`n"
     $cyberchefBat | Out-File -FilePath "$env:USERPROFILE\Desktop\CyberChef.bat" -Encoding Ascii
 }
 
