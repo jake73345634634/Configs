@@ -1,0 +1,6 @@
+[
+  "sudo apt update -y && sudo apt full-upgrade -y",
+  "sudo apt install python3-impacket -y && sudo apt install impacket-scripts -y",
+  "sudo apt install pipx git -y && pipx ensurepath && pipx install git+https://github.com/Pennyw0rth/NetExec",
+  "sudo apt install responder -y"
+]

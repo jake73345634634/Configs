@@ -1,4 +1,4 @@
-<h3>🎁 Configs</h3>
+<h3>🎁 Windows 11 Pentest Build</h3>
 
 ---
 ✨ A list of configuration files used to build a Windows 11 penetration testing image.
@@ -27,18 +27,145 @@ $\color{Yellow}{\textsf{Note: It may look complete at points, but do NOT press a
 - Add BurpSuite extensions
 
 ---
+<h4>Tools</h4>
+
+<h5>Configuration</h5>
+
+- Repository: Win11-Pentest (this repository)
+
+<h5>Evasion</h5>
+
+- Module: Invoke-Argfuscator
+- Repository: InvisibilityCloak
+- Repository: yetAnotherObfuscator
+- Repository: deoptimizer
+
+<h5>Reversing</h5>
+
+- WinGet: dnSpy
+- WinGet: ILSpy
+- WinGet: DIE
+- WinGet: JD-GUI
+
+<h5>Windows</h5>
+
+- File: Chisel
+- File: WinPEAS
+- Repository: mimikatz
+- Repository: Rubeus
+- Repository: Seatbelt
+- Repository: precompiled-binaries
+- Repository: SharpCollection
+- Repository: Titanis
+- WinGet: SysInternals
+
+<h5>Linux</h5>
+
+- File: Chisel
+- File: LinPEAS
+
+<h5>Kali WSL</h5>
+
+- APT: Impacket
+- PipX: NetExec
+
+<h5>Active Directory</h5>
+
+- Capability: RSAT ActiveDirectory
+- Capability: RSAT DNS
+- Docker: BloodHound
+- Repository: SharpHound
+- Repository: RustHound-CE
+- Repository: PlumHound
+- Repository: BlueHound
+- Repository: Certipy
+- Repository: bloodyAD
+- Repository: ScriptSentry
+- Repository: GPOZaurr
+- Repository: precompiled-binaries
+- Repository: SharpCollection
+- Repository: Coercer
+- Repository: Titanis
+
+<h5>Network</h5>
+
+- Docker: Nuclei
+- Docker: BBOT
+- WinGet: Nessus
+- WinGet: Nmap
+- WinGet: WireShark
+
+<h5>Kubernetes</h5>
+
+- Repository: Kubernetes-RBAC-Audit
+
+<h5>Azure</h5>
+
+- Docker: BloodHound
+- Repository: AzureHound
+- Module: AADInternals
+- Repository: precompiled-binaries
+- WinGet: Azure CLI
+- WinGet: Storage Explorer
+
+<h5>AWS</h5>
+
+- WinGet: AWS CLI
+
+<h5>Web Application</h5>
+
+- WinGet: Burp Suite Professional
+- WinGet: Insomnia
+
+<h5>Database</h5>
+
+- Docker: Postgres:16
+- Docker: Neo4J:4.4
+- WinGet: Firebird:5
+- WinGet: DBeaver
+- WinGet: SQL Server Management Studio
+- WinGet: MySQL Workbench
+- WinGet: SQLite Browser
+
+<h5>Resources</h5>
+
+- Docker: CyberChef
+- File: Jython
+- File: Hashcat
+- Repository: nuclei-templates
+- Repository: SecLists
+- Repository: DefaultCreds-cheat-sheet
+- Repository: username-anarchy
+- Repository: rockyou.txt
+- WinGet: Visual Studio 2022
+- WinGet: Visual Studio Code
+- WinGet: Office
+- WinGet: WireGuard
+- WinGet: OpenVPN
+- WinGet: 7zip
+- WinGet: Git
+- WinGet: Python:3.13
+- WinGet: NodeJS
+- WinGet: Go
+- WinGet: JQ
+- WinGet: Greenshot
+- WinGet: mRemoteNG
+- WinGet: Make
+- WinGet: VirtualBox
+- WinGet: Spotify
+- WinGet: OpenJDK:14
+- WinGet: KeePass
+
+---
 <h4>TODO</h4>
 
 - [ ] Add GNS3 and images for Cisco switches and routers, Fortinets, Dells
 - [ ] Change "Config" folder location to be "Information"
 - [ ] Create "Config" folder in this repo for... config
-- [ ] Install default tools for Kali WSL
-- [ ] Add shortcuts for all tools that can be ran on this host
 - [ ] Add VMWare download and checksum verification
 - [ ] Add Kali VM download
-- [ ] Make Docker and Bloodhound run on start
 - [ ] License BurpSuite and Nessus
-- [ ] Add BurpSuite extensions and Jython
+- [ ] Add BurpSuite extensions
 - [ ] Add Nessus plugins
 - [ ] Figure out how to install Spotify via WinGet as it requires user context, not administrative context
 - [ ] Create better and consistent logs for everything

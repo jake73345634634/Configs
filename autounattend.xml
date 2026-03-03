@@ -604,6 +604,7 @@ $Config = @{
         PowerShellModules     = "$REMOTE_BASE_URL/powershell_modules.json"
         WindowsCapabilities   = "$REMOTE_BASE_URL/capabilities.json"
         Files                 = "$REMOTE_BASE_URL/files.json"
+        KaliCommands          = "$REMOTE_BASE_URL/kali.json"
     }
     Directories = @{
         Desktop       = "$env:USERPROFILE\Desktop"
@@ -1291,6 +1292,76 @@ Remove-Item -Path "$env:PUBLIC\Desktop\*" -ErrorAction SilentlyContinue
 Remove-Item -Path "$env:USERPROFILE\Desktop\Docker Desktop.lnk" -ErrorAction SilentlyContinue
 Remove-Item -Path "$env:USERPROFILE\Desktop\Insomnia.lnk" -ErrorAction SilentlyContinue
 
+# Remove OpenVPN from startup
+$runPath = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Run"
+Remove-ItemProperty -Path $runPath -Name "OpenVPN-GUI" -ErrorAction SilentlyContinue
+Remove-ItemProperty -Path "HKLM:\Software\Microsoft\Windows\CurrentVersion\Run" -Name "OpenVPN-GUI" -ErrorAction SilentlyContinue
+$openvpnService = Get-Service -Name "OpenVPNService" -ErrorAction SilentlyContinue
+if ($openvpnService) { Set-Service -Name "OpenVPNService" -StartupType Manual }
+Write-ContainerLog "OpenVPN startup entries removed"
+
+# Configure Kali WSL
+$wslExe = "$env:SystemRoot\System32\wsl.exe"
+if (Test-Path $wslExe) {
+    Write-ContainerLog "=== Kali WSL Configuration ==="
+
+    # Initialize distro (bypasses interactive first-launch)
+    Write-ContainerLog "Initializing kali-linux distro..."
+    &amp; $wslExe -d kali-linux -u root -- echo "Kali initialized" 2&gt;&amp;1 | Out-File -FilePath $logFile -Append -Encoding Ascii
+
+    if ($LASTEXITCODE -eq 0) {
+        # Create pentest user
+        Write-ContainerLog "Creating pentest user..."
+        &amp; $wslExe -d kali-linux -u root -- useradd -m -s /bin/bash pentest 2&gt;&amp;1 | Out-File -FilePath $logFile -Append -Encoding Ascii
+        &amp; $wslExe -d kali-linux -u root -- passwd -d pentest 2&gt;&amp;1 | Out-File -FilePath $logFile -Append -Encoding Ascii
+
+        # Configure NOPASSWD sudo
+        Write-ContainerLog "Configuring NOPASSWD sudo for pentest user..."
+        &amp; $wslExe -d kali-linux -u root -- bash -c "echo 'pentest ALL=(ALL) NOPASSWD: ALL' > /etc/sudoers.d/pentest &amp;&amp; chmod 440 /etc/sudoers.d/pentest" 2&gt;&amp;1 | Out-File -FilePath $logFile -Append -Encoding Ascii
+
+        # Set default WSL user to pentest (UID 1000)
+        Write-ContainerLog "Setting default WSL user to pentest..."
+        $lxssPath = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Lxss"
+        if (Test-Path $lxssPath) {
+            Get-ChildItem $lxssPath | ForEach-Object {
+                $distroName = (Get-ItemProperty $_.PSPath).DistributionName
+                if ($distroName -eq "kali-linux") {
+                    Set-ItemProperty -Path $_.PSPath -Name DefaultUid -Value 1000
+                    Write-ContainerLog "Default WSL user set to pentest (UID 1000)"
+                }
+            }
+        }
+
+        # Execute commands from KaliCommandsList.txt
+        $kaliCommandsFile = "$env:SystemRoot\Setup\Scripts\KaliCommandsList.txt"
+        if (Test-Path $kaliCommandsFile) {
+            $kaliCmdCount = 0
+            Get-Content -Path $kaliCommandsFile | ForEach-Object {
+                $kaliCmd = $_.Trim()
+                if ($kaliCmd) {
+                    $executed = $false
+                    for ($attempt = 1; $attempt -le 3; $attempt++) {
+                        Write-ContainerLog "Executing Kali command: $kaliCmd (attempt $attempt/3)"
+                        &amp; $wslExe -d kali-linux -u pentest -- bash -c $kaliCmd 2&gt;&amp;1 | Out-File -FilePath $logFile -Append -Encoding Ascii
+                        if ($LASTEXITCODE -eq 0) {
+                            $executed = $true
+                            $kaliCmdCount++
+                            break
+                        }
+                        if ($attempt -lt 3) { Start-Sleep -Seconds 10 }
+                    }
+                    if (-not $executed) {
+                        Write-ContainerLog "ERROR: Failed to execute Kali command after 3 attempts: $kaliCmd"
+                    }
+                }
+            }
+            Write-ContainerLog "Executed $kaliCmdCount Kali command(s)"
+        }
+    } else {
+        Write-ContainerLog "ERROR: Failed to initialize kali-linux distro"
+    }
+}
+
 # Generate installation report
 Write-ContainerLog "Generating installation report..."
 
@@ -1460,6 +1531,36 @@ if (Test-Path $containersFile) {
 }
 $readmeContent += ""
 
+# Check Kali WSL
+$readmeContent += "[*] Kali WSL"
+if (Test-Path $wslExe) {
+    $wslDistros = &amp; $wslExe -l -q 2&gt;&amp;1 | Out-String
+    if ($wslDistros -match "kali-linux") {
+        $readmeContent += "[+] kali-linux distro installed"
+
+        $pentestCheck = &amp; $wslExe -d kali-linux -u root -- id pentest 2&gt;&amp;1 | Out-String
+        if ($LASTEXITCODE -eq 0) {
+            $readmeContent += "[+] pentest user created"
+        } else {
+            $readmeContent += "[-] pentest user not found"
+            $failedCommands += "wsl -d kali-linux -u root -- useradd -m -s /bin/bash pentest"
+        }
+
+        $kaliCommandsFile = "$env:SystemRoot\Setup\Scripts\KaliCommandsList.txt"
+        if (Test-Path $kaliCommandsFile) {
+            $cmdCount = (Get-Content -Path $kaliCommandsFile | Where-Object { $_.Trim() }).Count
+            $readmeContent += "[*] $cmdCount command(s) configured from kali.json"
+        }
+    } else {
+        $readmeContent += "[-] kali-linux distro not found"
+        $failedCommands += "wsl --install -d kali-linux"
+    }
+} else {
+    $readmeContent += "[-] WSL not available"
+    $failedCommands += "wsl --install"
+}
+$readmeContent += ""
+
 # Add failed installation commands
 if ($failedCommands.Count -gt 0) {
     $readmeContent += "=" * 80
@@ -1544,7 +1645,12 @@ Restart-Computer -Force
         }
         $filesList | Out-File -FilePath (Join-Path $SetupScriptsPath "FilesList.txt") -Encoding Ascii
     }
-    
+
+    $kaliCommands = Get-RemoteJson -Url $Config.RemoteUrls.KaliCommands -LogFile $LogFile
+    if ($kaliCommands) {
+        $kaliCommands | Out-File -FilePath (Join-Path $SetupScriptsPath "KaliCommandsList.txt") -Encoding Ascii
+    }
+
     # Register Stage 2 script to run after next reboot
     $runOncePath = "HKCU:\Software\Microsoft\Windows\CurrentVersion\RunOnce"
     $runOnceCommand = "powershell -ExecutionPolicy Bypass -File `"$stage2ScriptPath`""

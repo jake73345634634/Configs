@@ -15,13 +15,14 @@
   { "url": "https://github.com/CravateRouge/bloodyAD", "name": "bloodyAD", "tags": ["Active_Directory"] },
   { "url": "https://github.com/techspence/ScriptSentry", "name": "ScriptSentry", "tags": ["Active_Directory"] },
   { "url": "https://github.com/EvotecIT/GPOZaurr", "name": "GPOZaurr", "tags": ["Active_Directory"] },
-  { "url": "https://github.com/projectdiscovery/nuclei-templates", "name": "nuclei-templates", "tags": ["Network"] },
+  { "url": "https://github.com/projectdiscovery/nuclei-templates", "name": "nuclei-templates", "tags": ["Resources"] },
   { "url": "https://github.com/jake73345634634/Kubernetes-RBAC-Audit", "name": "Kubernetes-RBAC-Audit", "tags": ["Kubernetes"] },
   { "url": "https://github.com/danielmiessler/SecLists", "name": "SecLists", "tags": ["Resources"] },
   { "url": "https://github.com/ihebski/DefaultCreds-cheat-sheet", "name": "DefaultCreds-cheat-sheet", "tags": ["Resources"] },
   { "url": "https://github.com/urbanadventurer/username-anarchy", "name": "username-anarchy", "tags": ["Resources"] },
-  { "url": "https://github.com/jakobfriedl/precompiled-binaries", "name": "precompiled-binaries", "tags": ["Resources"] },
-  { "url": "https://github.com/Flangvik/SharpCollection", "name": "SharpCollection", "tags": ["Resources"] },
+  { "url": "https://github.com/jakobfriedl/precompiled-binaries", "name": "precompiled-binaries", "tags": ["Azure", "Windows", "Active_Directory"] },
+  { "url": "https://github.com/Flangvik/SharpCollection", "name": "SharpCollection", "tags": ["Windows", "Active_Directory"] },
   { "url": "https://github.com/RykerWilder/rockyou.txt", "name": "rockyou.txt", "tags": ["Resources"] },
-  { "url": "https://github.com/p0dalirius/Coercer", "name": "Coercer", "tags": ["Active_Directory"] }
+  { "url": "https://github.com/p0dalirius/Coercer", "name": "Coercer", "tags": ["Active_Directory"] },
+  { "url": "https://github.com/trustedsec/Titanis", "name": "Titanis", "tags": ["Windows", "Active_Directory"] }
 ]
