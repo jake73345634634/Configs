@@ -70,7 +70,7 @@ $\color{Yellow}{\textsf{Note: Sometimes you have to manually login (no password;
 
 - APT: Impacket
 - APT: Responder
-- PipX: NetExec
+- APT: NetExec
 
 <h5>Active Directory</h5>
 
