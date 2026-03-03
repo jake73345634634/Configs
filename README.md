@@ -67,6 +67,7 @@ $\color{Yellow}{\textsf{Note: It may look complete at points, but do NOT press a
 <h5>Kali WSL</h5>
 
 - APT: Impacket
+- APT: Responder
 - PipX: NetExec
 
 <h5>Active Directory</h5>
@@ -160,7 +161,6 @@ $\color{Yellow}{\textsf{Note: It may look complete at points, but do NOT press a
 <h4>TODO</h4>
 
 - [ ] Add GNS3 and images for Cisco switches and routers, Fortinets, Dells
-- [ ] Change "Config" folder location to be "Information"
 - [ ] Create "Config" folder in this repo for... config
 - [ ] Add VMWare download and checksum verification
 - [ ] Add Kali VM download
@@ -170,4 +170,3 @@ $\color{Yellow}{\textsf{Note: It may look complete at points, but do NOT press a
 - [ ] Figure out how to install Spotify via WinGet as it requires user context, not administrative context
 - [ ] Create better and consistent logs for everything
 - [ ] Check everything is installed Mimikatz, Rubeus, Seatbelt, Certipy compilation
-- [ ] Install NetExec via Pipx

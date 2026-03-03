@@ -833,10 +833,33 @@ function New-ServiceShortcuts {
     
     Write-Host "Creating service shortcuts..."
     
-    $bloodhoundBat = "docker compose -f $($ToolDirs.AllTools)\Win11-Pentest\bloodhound-docker-compose.yml -p bloodhound up -d"
+    $dockerStartBlock = @'
+@echo off
+net session >nul 2>&1 || (echo Run as administrator. & pause & exit /b 1)
+
+:: Start Docker Desktop if not running
+tasklist /FI "IMAGENAME eq Docker Desktop.exe" 2>NUL | find /I "Docker Desktop.exe" >NUL
+if %ERRORLEVEL% NEQ 0 (
+    echo Starting Docker Desktop...
+    start "" "%ProgramFiles%\Docker\Docker\Docker Desktop.exe"
+)
+
+:: Wait for Docker Engine to be ready
+echo Waiting for Docker Engine...
+:wait_docker
+docker info >nul 2>&1
+if %ERRORLEVEL% NEQ 0 (
+    timeout /t 2 /nobreak >nul
+    goto wait_docker
+)
+echo Docker is ready.
+
+'@
+
+    $bloodhoundBat = $dockerStartBlock + "docker compose -f $($ToolDirs.AllTools)\Win11-Pentest\Configuration\Windows\bloodhound-docker-compose.yml -p bloodhound up -d`r`nif %ERRORLEVEL% NEQ 0 (echo. & echo ERROR: Failed to start Bloodhound containers. & pause)`r`n"
     $bloodhoundBat | Out-File -FilePath "$env:USERPROFILE\Desktop\Bloodhound.bat" -Encoding Ascii
-    
-    $cyberchefBat = "docker run -d -p 10001:80 ghcr.io/gchq/cyberchef"
+
+    $cyberchefBat = $dockerStartBlock + "docker run -d -p 10001:80 ghcr.io/gchq/cyberchef`r`nif %ERRORLEVEL% NEQ 0 (echo. & echo ERROR: Failed to start CyberChef container. & pause)`r`n"
     $cyberchefBat | Out-File -FilePath "$env:USERPROFILE\Desktop\CyberChef.bat" -Encoding Ascii
 }
 
@@ -1089,6 +1112,34 @@ function Install-Files {
             continue
         }
 
+        # Extract archives (.zip / .gz) and remove the original
+        if ($fileName -match '\.(zip|gz)$') {
+            try {
+                if ($fileName -match '\.zip$') {
+                    $extractDir = Join-Path $allToolsDir ($fileName -replace '\.zip$', '')
+                    Expand-Archive -Path $destination -DestinationPath $extractDir -Force
+                    Remove-Item -LiteralPath $destination -Force
+                    $destination = $extractDir
+                    $fileName = $fileName -replace '\.zip$', ''
+                } elseif ($fileName -match '\.gz$') {
+                    Add-Type -AssemblyName System.IO.Compression -ErrorAction SilentlyContinue
+                    $decompressedPath = Join-Path $allToolsDir ($fileName -replace '\.gz$', '')
+                    $gzIn = [System.IO.File]::OpenRead($destination)
+                    $gzStream = [System.IO.Compression.GZipStream]::new($gzIn, [System.IO.Compression.CompressionMode]::Decompress)
+                    $fsOut = [System.IO.File]::Create($decompressedPath)
+                    $gzStream.CopyTo($fsOut)
+                    $fsOut.Close(); $gzStream.Close(); $gzIn.Close()
+                    Remove-Item -LiteralPath $destination -Force
+                    $destination = $decompressedPath
+                    $fileName = $fileName -replace '\.gz$', ''
+                }
+                Write-Log "Extracted and removed archive: $($file.name)" -LogFile $LogFile
+            }
+            catch {
+                Write-Log "Failed to extract $($file.name): $_" -LogFile $LogFile -IsError
+            }
+        }
+
         # Create symlinks in each tagged category folder
         foreach ($tag in $file.tags) {
             if ($tagDirMap.ContainsKey($tag)) {
@@ -1108,7 +1159,7 @@ function Install-WSL {
     Write-Host "`nInstalling WSL..."
     Write-Log "=== WSL Installation ===" -LogFile $LogFile
     
-    wsl --install 2&gt;&amp;1 | Out-File -FilePath $LogFile -Append -Encoding Ascii
+    wsl --install -d kali-linux 2&gt;&amp;1 | Out-File -FilePath $LogFile -Append -Encoding Ascii
 }
 
 function Invoke-WindowsActivation {
@@ -1329,6 +1380,19 @@ if (Test-Path $wslExe) {
                     Set-ItemProperty -Path $_.PSPath -Name DefaultUid -Value 1000
                     Write-ContainerLog "Default WSL user set to pentest (UID 1000)"
                 }
+            }
+        }
+
+        # Copy Configuration/Kali dotfiles to pentest and root home directories
+        $kaliConfigDir = "$env:USERPROFILE\Desktop\Tools\_ALL_TOOLS\Win11-Pentest\Configuration\Kali"
+        if (Test-Path $kaliConfigDir) {
+            Write-ContainerLog "Copying Kali configuration files..."
+            $driveLetter = $kaliConfigDir.Substring(0,1).ToLower()
+            $wslConfigPath = "/mnt/$driveLetter" + ($kaliConfigDir.Substring(2) -replace '\\', '/')
+            Get-ChildItem -Path $kaliConfigDir -File -Force | ForEach-Object {
+                $fname = $_.Name
+                &amp; $wslExe -d kali-linux -u root -- bash -c "cp '$wslConfigPath/$fname' /root/ &amp;&amp; cp '$wslConfigPath/$fname' /home/pentest/ &amp;&amp; chown pentest:pentest '/home/pentest/$fname'" 2&gt;&amp;1 | Out-File -FilePath $logFile -Append -Encoding Ascii
+                Write-ContainerLog "Copied $fname to /root/ and /home/pentest/"
             }
         }
 
@@ -1698,6 +1762,12 @@ Install-WSL -LogFile $logs.Main.FullName
 
 # Prepare container installation (requires reboot)
 Install-ContainersStage1 -RemoteUrl $Config.RemoteUrls.Containers -SetupScriptsPath $Config.Directories.SetupScripts -LogFile $logs.Containers.FullName
+
+# Ensure auto-logon persists for Stage 2 (unattend LogonCount is unreliable on Win11)
+$winlogonPath = "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon"
+Set-ItemProperty -Path $winlogonPath -Name "AutoAdminLogon" -Value "1" -Force
+Set-ItemProperty -Path $winlogonPath -Name "DefaultUserName" -Value "Pentest" -Force
+Set-ItemProperty -Path $winlogonPath -Name "DefaultPassword" -Value "" -Force
 
 Write-Host "`n==================================================================="
 Write-Host "  Initial setup complete. System will reboot to continue..."
