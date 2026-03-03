@@ -26,6 +26,7 @@ $\color{Yellow}{\textsf{Note: Sometimes you have to manually login (no password;
 - License Nessus
 - Add Nessus plugins
 - License BurpSuite
+- [Bridge WSL](https://github.com/Unsigned-Char/WSL2HyperVSwitch)
 
 ---
 <h4>Tools</h4>
