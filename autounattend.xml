@@ -1942,9 +1942,9 @@ $scripts = @(
 	};
 	{
 		reg.exe add "HKCR\exefile\shell\RunAsNetOnlyPrompt" /ve /t REG_SZ /d "Run as /netonly" /f;
-		reg.exe add "HKCR\exefile\shell\RunAsNetOnlyPrompt\command" /ve /t REG_SZ /d "powershell.exe -NoProfile -ExecutionPolicy Bypass -File \"C:\Windows\Setup\Scripts\RunAsNetOnlyPrompt.ps1\" \"%1\"" /f;
+		reg.exe add "HKCR\exefile\shell\RunAsNetOnlyPrompt\command" /ve /t REG_SZ /d 'powershell.exe -NoProfile -ExecutionPolicy Bypass -File "C:\Windows\Setup\Scripts\RunAsNetOnlyPrompt.ps1" "%1"' /f;
 		reg.exe add "HKCR\lnkfile\shell\RunAsNetOnlyPrompt" /ve /t REG_SZ /d "Run as /netonly" /f;
-		reg.exe add "HKCR\lnkfile\shell\RunAsNetOnlyPrompt\command" /ve /t REG_SZ /d "powershell.exe -NoProfile -ExecutionPolicy Bypass -File \"C:\Windows\Setup\Scripts\RunAsNetOnlyPrompt.ps1\" \"%1\"" /f;
+		reg.exe add "HKCR\lnkfile\shell\RunAsNetOnlyPrompt\command" /ve /t REG_SZ /d 'powershell.exe -NoProfile -ExecutionPolicy Bypass -File "C:\Windows\Setup\Scripts\RunAsNetOnlyPrompt.ps1" "%1"' /f;
 	};
 	{
 		icacls.exe C:\ /remove:g "*S-1-5-11"
