@@ -1941,6 +1941,12 @@ $scripts = @(
 		reg.exe add "HKLM\SYSTEM\CurrentControlSet\Control\FileSystem" /v LongPathsEnabled /t REG_DWORD /d 1 /f
 	};
 	{
+		reg.exe add "HKCR\exefile\shell\RunAsNetOnlyPrompt" /ve /t REG_SZ /d "Run as /netonly" /f;
+		reg.exe add "HKCR\exefile\shell\RunAsNetOnlyPrompt\command" /ve /t REG_SZ /d "powershell.exe -NoProfile -ExecutionPolicy Bypass -File \"C:\Windows\Setup\Scripts\RunAsNetOnlyPrompt.ps1\" \"%1\"" /f;
+		reg.exe add "HKCR\lnkfile\shell\RunAsNetOnlyPrompt" /ve /t REG_SZ /d "Run as /netonly" /f;
+		reg.exe add "HKCR\lnkfile\shell\RunAsNetOnlyPrompt\command" /ve /t REG_SZ /d "powershell.exe -NoProfile -ExecutionPolicy Bypass -File \"C:\Windows\Setup\Scripts\RunAsNetOnlyPrompt.ps1\" \"%1\"" /f;
+	};
+	{
 		icacls.exe C:\ /remove:g "*S-1-5-11"
 	};
 	{
@@ -2156,6 +2162,32 @@ $scripts = @(
     $complete += $increment;
   }
 } *&gt;&amp;1 | Out-String &gt;&gt; "C:\Windows\Setup\Scripts\DefaultUser.log";
+		</File>
+		<File path="C:\Windows\Setup\Scripts\RunAsNetOnlyPrompt.ps1">
+param([string]$FilePath)
+
+Add-Type -AssemblyName Microsoft.VisualBasic
+
+# Resolve .lnk shortcuts to their target executable
+if ($FilePath -match '\.lnk$') {
+    $shell = New-Object -ComObject WScript.Shell
+    $shortcut = $shell.CreateShortcut($FilePath)
+    $FilePath = $shortcut.TargetPath
+    [System.Runtime.InteropServices.Marshal]::ReleaseComObject($shell) | Out-Null
+}
+
+if (-not $FilePath -or -not (Test-Path $FilePath)) {
+    [Microsoft.VisualBasic.Interaction]::MsgBox("File not found: $FilePath", "OkOnly,Exclamation", "RunAs /netonly") | Out-Null
+    exit 1
+}
+
+$domain = [Microsoft.VisualBasic.Interaction]::InputBox("Enter domain:", "RunAs /netonly")
+if (-not $domain) { exit 0 }
+
+$username = [Microsoft.VisualBasic.Interaction]::InputBox("Enter username:", "RunAs /netonly")
+if (-not $username) { exit 0 }
+
+runas.exe /netonly /user:${domain}\${username} "`"$FilePath`""
 		</File>
 		<File path="C:\Windows\Setup\Scripts\FirstLogon.ps1">
 $scripts = @(
