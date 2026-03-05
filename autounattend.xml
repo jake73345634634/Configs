@@ -1137,9 +1137,16 @@ function Install-Files {
                     if ($items.Count -eq 1) {
                         $singleItem = $items[0]
                         $flatPath = Join-Path $allToolsDir $singleItem.Name
-                        Move-Item -Path $singleItem.FullName -Destination $flatPath -Force
-                        Remove-Item -Path $extractDir -Force
-                        $destination = $flatPath
+                        if ($singleItem.PSIsContainer -and $flatPath -eq $extractDir) {
+                            # Inner dir has same name as extract dir - promote its children
+                            Get-ChildItem -Path $singleItem.FullName -Force | Move-Item -Destination $extractDir -Force
+                            Remove-Item -Path $singleItem.FullName -Recurse -Force
+                            $destination = $extractDir
+                        } else {
+                            Move-Item -Path $singleItem.FullName -Destination $flatPath -Force
+                            Remove-Item -Path $extractDir -Recurse -Force
+                            $destination = $flatPath
+                        }
                         $fileName = $singleItem.Name
                     } else {
                         $destination = $extractDir
@@ -1166,9 +1173,16 @@ function Install-Files {
                     if ($items.Count -eq 1) {
                         $singleItem = $items[0]
                         $flatPath = Join-Path $allToolsDir $singleItem.Name
-                        Move-Item -Path $singleItem.FullName -Destination $flatPath -Force
-                        Remove-Item -Path $extractDir -Force
-                        $destination = $flatPath
+                        if ($singleItem.PSIsContainer -and $flatPath -eq $extractDir) {
+                            # Inner dir has same name as extract dir - promote its children
+                            Get-ChildItem -Path $singleItem.FullName -Force | Move-Item -Destination $extractDir -Force
+                            Remove-Item -Path $singleItem.FullName -Recurse -Force
+                            $destination = $extractDir
+                        } else {
+                            Move-Item -Path $singleItem.FullName -Destination $flatPath -Force
+                            Remove-Item -Path $extractDir -Recurse -Force
+                            $destination = $flatPath
+                        }
                         $fileName = $singleItem.Name
                     } else {
                         $destination = $extractDir
