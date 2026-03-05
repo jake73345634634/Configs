@@ -1113,12 +1113,6 @@ function Install-Files {
         $fileName = $file.name
         $destination = Join-Path $allToolsDir $fileName
 
-        # Ensure parent directories exist for nested names (e.g. "Burp_Extensions/auth-analyser")
-        $destParent = Split-Path $destination -Parent
-        if (-not (Test-Path $destParent)) {
-            New-Item -Path $destParent -ItemType Directory -Force | Out-Null
-        }
-
         Write-Log "Downloading: $fileUrl -&gt; $destination" -LogFile $LogFile
         try {
             Invoke-WithRetry -Description "Download $fileUrl" -LogFile $LogFile -ScriptBlock {
@@ -1192,10 +1186,6 @@ function Install-Files {
         foreach ($tag in $file.tags) {
             if ($tagDirMap.ContainsKey($tag)) {
                 $linkPath = Join-Path $tagDirMap[$tag] $fileName
-                $linkParent = Split-Path $linkPath -Parent
-                if (-not (Test-Path $linkParent)) {
-                    New-Item -Path $linkParent -ItemType Directory -Force | Out-Null
-                }
                 New-Item -ItemType SymbolicLink -Path $linkPath -Target $destination -Force | Out-Null
                 Write-Log "Symlinked: $linkPath -&gt; $destination" -LogFile $LogFile
             } else {
