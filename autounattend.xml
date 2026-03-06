@@ -1512,7 +1512,10 @@ if (Test-Path $winConfigFile) {
             $srcPath = Join-Path $winConfigDir $srcFile
             if (Test-Path $srcPath) {
                 foreach ($dest in $destinations) {
+                    $dest = [Environment]::ExpandEnvironmentVariables($dest)
                     try {
+                        $destDir = Split-Path -Parent $dest
+                        if (-not (Test-Path $destDir)) { New-Item -Path $destDir -ItemType Directory -Force | Out-Null }
                         Copy-Item -Path $srcPath -Destination $dest -Force
                         Write-ContainerLog "Copied $srcFile to $dest"
                     } catch {
