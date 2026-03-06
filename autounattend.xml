@@ -1429,8 +1429,8 @@ if (Test-Path $wslExe) {
     $kaliDeadline = [datetime]::Now.AddMinutes(10)
     Write-ContainerLog "Waiting for kali-linux distro to become available..."
     while ([datetime]::Now -lt $kaliDeadline) {
-        $distroList = &amp; $wslExe -l -q 2&gt;&amp;1 | Out-String
-        if ($distroList -match "kali-linux") {
+        $kaliFound = (&amp; $wslExe -l -q 2&gt;&amp;1 | Where-Object { $_ -eq "kali-linux" }).Count -gt 0
+        if ($kaliFound) {
             # Distro registered, try to initialize it
             &amp; $wslExe -d kali-linux -u root -- echo "Kali initialized" 2&gt;&amp;1 | Out-File -FilePath $logFile -Append -Encoding Ascii
             if ($LASTEXITCODE -eq 0) {
