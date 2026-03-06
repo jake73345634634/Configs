@@ -1728,8 +1728,8 @@ if (Test-Path $kaliCommandsFile) {
 }
 
 if (Test-Path $wslExe) {
-    $wslDistros = &amp; $wslExe -l -q 2&gt;&amp;1 | Out-String
-    if ($wslDistros -match "kali-linux") {
+    $kaliInstalled = (&amp; $wslExe -l -q 2&gt;&amp;1 | Where-Object { $_ -eq "kali-linux" }).Count -gt 0
+    if ($kaliInstalled) {
         $readmeContent += "[+] kali-linux distro installed"
 
         $pentestCheck = &amp; $wslExe -d kali-linux -u root -- id pentest 2&gt;&amp;1 | Out-String
