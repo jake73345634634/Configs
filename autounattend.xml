@@ -1419,7 +1419,12 @@ $wslExe = "$env:SystemRoot\System32\wsl.exe"
 if (Test-Path $wslExe) {
     Write-ContainerLog "=== Kali WSL Configuration ==="
 
-    # Wait for kali-linux distro to be available (wsl --install needs time after reboot)
+    # Re-run install now that WSL platform is active post-reboot
+    Write-ContainerLog "Triggering kali-linux distro installation..."
+    &amp; $wslExe --install -d kali-linux --no-launch 2&gt;&amp;1 | Out-File -FilePath $logFile -Append -Encoding Ascii
+    Write-ContainerLog "Install command finished (exit code: $LASTEXITCODE)"
+
+    # Wait for kali-linux distro to be available
     $kaliReady = $false
     $kaliDeadline = [datetime]::Now.AddMinutes(10)
     Write-ContainerLog "Waiting for kali-linux distro to become available..."
