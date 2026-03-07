@@ -605,6 +605,9 @@ $Config = @{
         WindowsCapabilities   = "$REMOTE_BASE_URL/capabilities.json"
         Files                 = "$REMOTE_BASE_URL/files.json"
         KaliCommands          = "$REMOTE_BASE_URL/kali.json"
+        WindowsConfig         = "https://raw.githubusercontent.com/jake73345634634/Win11-Pentest/main/Configuration/Windows/config.json"
+        KaliConfig            = "https://raw.githubusercontent.com/jake73345634634/Win11-Pentest/main/Configuration/Kali/config.json"
+        WindowsCommands       = "$REMOTE_BASE_URL/windows.json"
     }
     Directories = @{
         Desktop       = "$env:USERPROFILE\Desktop"
@@ -1419,13 +1422,18 @@ $wslExe = "$env:SystemRoot\System32\wsl.exe"
 if (Test-Path $wslExe) {
     Write-ContainerLog "=== Kali WSL Configuration ==="
 
-    # Wait for kali-linux distro to be available (wsl --install needs time after reboot)
+    # Re-run install now that WSL platform is active post-reboot
+    Write-ContainerLog "Triggering kali-linux distro installation..."
+    &amp; $wslExe --install -d kali-linux --no-launch 2&gt;&amp;1 | Out-File -FilePath $logFile -Append -Encoding Ascii
+    Write-ContainerLog "Install command finished (exit code: $LASTEXITCODE)"
+
+    # Wait for kali-linux distro to be available
     $kaliReady = $false
     $kaliDeadline = [datetime]::Now.AddMinutes(10)
     Write-ContainerLog "Waiting for kali-linux distro to become available..."
     while ([datetime]::Now -lt $kaliDeadline) {
-        $distroList = &amp; $wslExe -l -q 2&gt;&amp;1 | Out-String
-        if ($distroList -match "kali-linux") {
+        $kaliFound = (&amp; $wslExe -l -q 2&gt;&amp;1 | Where-Object { $_ -eq "kali-linux" }).Count -gt 0
+        if ($kaliFound) {
             # Distro registered, try to initialize it
             &amp; $wslExe -d kali-linux -u root -- echo "Kali initialized" 2&gt;&amp;1 | Out-File -FilePath $logFile -Append -Encoding Ascii
             if ($LASTEXITCODE -eq 0) {
@@ -1461,19 +1469,6 @@ if (Test-Path $wslExe) {
             }
         }
 
-        # Copy Configuration/Kali dotfiles to pentest and root home directories
-        $kaliConfigDir = "$env:USERPROFILE\Desktop\Tools\_ALL_TOOLS\Win11-Pentest\Configuration\Kali"
-        if (Test-Path $kaliConfigDir) {
-            Write-ContainerLog "Copying Kali configuration files..."
-            $driveLetter = $kaliConfigDir.Substring(0,1).ToLower()
-            $wslConfigPath = "/mnt/$driveLetter" + ($kaliConfigDir.Substring(2) -replace '\\', '/')
-            Get-ChildItem -Path $kaliConfigDir -File -Force | ForEach-Object {
-                $fname = $_.Name
-                &amp; $wslExe -d kali-linux -u root -- bash -c "cp '$wslConfigPath/$fname' /root/ &amp;&amp; cp '$wslConfigPath/$fname' /home/pentest/ &amp;&amp; chown pentest:pentest '/home/pentest/$fname'" 2&gt;&amp;1 | Out-File -FilePath $logFile -Append -Encoding Ascii
-                Write-ContainerLog "Copied $fname to /root/ and /home/pentest/"
-            }
-        }
-
         # Execute commands from KaliCommandsList.txt
         $kaliCommandsFile = "$env:SystemRoot\Setup\Scripts\KaliCommandsList.txt"
         if (Test-Path $kaliCommandsFile) {
@@ -1501,6 +1496,93 @@ if (Test-Path $wslExe) {
         }
     } else {
         Write-ContainerLog "ERROR: kali-linux distro not available after 10 minutes"
+    }
+}
+
+# Copy Windows configuration files
+$winConfigFile = "$env:SystemRoot\Setup\Scripts\WindowsConfig.json"
+$winConfigDir = "$env:USERPROFILE\Desktop\Tools\_ALL_TOOLS\Win11-Pentest\Configuration\Windows"
+if (Test-Path $winConfigFile) {
+    $winConfigJson = Get-Content -Path $winConfigFile -Raw | ConvertFrom-Json
+    if ($winConfigJson.PSObject.Properties.Count -gt 0) {
+        Write-ContainerLog "=== Windows Configuration File Copies ==="
+        $winConfigJson.PSObject.Properties | ForEach-Object {
+            $srcFile = $_.Name
+            $destinations = $_.Value
+            $srcPath = Join-Path $winConfigDir $srcFile
+            if (Test-Path $srcPath) {
+                foreach ($dest in $destinations) {
+                    $dest = [Environment]::ExpandEnvironmentVariables($dest)
+                    try {
+                        $destDir = Split-Path -Parent $dest
+                        if (-not (Test-Path $destDir)) { New-Item -Path $destDir -ItemType Directory -Force | Out-Null }
+                        Copy-Item -Path $srcPath -Destination $dest -Force
+                        Write-ContainerLog "Copied $srcFile to $dest"
+                    } catch {
+                        Write-ContainerLog "ERROR: Failed to copy $srcFile to $dest : $_"
+                    }
+                }
+            } else {
+                Write-ContainerLog "ERROR: Source file not found: $srcPath"
+            }
+        }
+    }
+}
+
+# Execute Windows commands
+$winCommandsFile = "$env:SystemRoot\Setup\Scripts\WindowsCommandsList.txt"
+if (Test-Path $winCommandsFile) {
+    Write-ContainerLog "=== Windows Commands ==="
+    $winCmdCount = 0
+    Get-Content -Path $winCommandsFile | ForEach-Object {
+        $winCmd = $_.Trim()
+        if ($winCmd) {
+            $executed = $false
+            for ($attempt = 1; $attempt -le 3; $attempt++) {
+                Write-ContainerLog "Executing Windows command: $winCmd (attempt $attempt/3)"
+                try {
+                    Push-Location $winConfigDir
+                    $output = Invoke-Expression $winCmd 2&gt;&amp;1 | Out-String
+                    $output | Out-File -FilePath $logFile -Append -Encoding Ascii
+                    Pop-Location
+                    $executed = $true
+                    $winCmdCount++
+                    break
+                }
+                catch {
+                    Pop-Location
+                    "$_" | Out-File -FilePath $logFile -Append -Encoding Ascii
+                    if ($attempt -lt 3) { Start-Sleep -Seconds 10 }
+                }
+            }
+            if (-not $executed) {
+                Write-ContainerLog "ERROR: Failed to execute Windows command after 3 attempts: $winCmd"
+            }
+        }
+    }
+    Write-ContainerLog "Executed $winCmdCount Windows command(s)"
+}
+
+# Copy Kali configuration files
+$kaliConfigFile = "$env:SystemRoot\Setup\Scripts\KaliConfig.json"
+$kaliConfigDir = "$env:USERPROFILE\Desktop\Tools\_ALL_TOOLS\Win11-Pentest\Configuration\Kali"
+if ((Test-Path $kaliConfigFile) -and (Test-Path $wslExe)) {
+    $kaliConfigJson = Get-Content -Path $kaliConfigFile -Raw | ConvertFrom-Json
+    if ($kaliConfigJson.PSObject.Properties.Count -gt 0) {
+        Write-ContainerLog "=== Kali Configuration File Copies ==="
+        $driveLetter = $kaliConfigDir.Substring(0,1).ToLower()
+        $wslConfigPath = "/mnt/$driveLetter" + ($kaliConfigDir.Substring(2) -replace '\\', '/')
+        $kaliConfigJson.PSObject.Properties | ForEach-Object {
+            $srcFile = $_.Name
+            $destinations = $_.Value
+            foreach ($dest in $destinations) {
+                &amp; $wslExe -d kali-linux -u root -- bash -c "cp '$wslConfigPath/$srcFile' '$dest'" 2&gt;&amp;1 | Out-File -FilePath $logFile -Append -Encoding Ascii
+                if ($dest -like "/home/pentest/*") {
+                    &amp; $wslExe -d kali-linux -u root -- bash -c "chown pentest:pentest '$dest'" 2&gt;&amp;1 | Out-File -FilePath $logFile -Append -Encoding Ascii
+                }
+                Write-ContainerLog "Copied $srcFile to $dest"
+            }
+        }
     }
 }
 
@@ -1707,12 +1789,20 @@ $kaliSetupCommands = @(
     "wsl -d kali-linux -u root -- passwd -d pentest"
     "wsl -d kali-linux -u root -- bash -c `"echo 'pentest ALL=(ALL) NOPASSWD: ALL' &gt; /etc/sudoers.d/pentest &amp;&amp; chmod 440 /etc/sudoers.d/pentest`""
 )
+$kaliConfigFile = "$env:SystemRoot\Setup\Scripts\KaliConfig.json"
 $kaliConfigDir = "$env:USERPROFILE\Desktop\Tools\_ALL_TOOLS\Win11-Pentest\Configuration\Kali"
-if (Test-Path $kaliConfigDir) {
+if (Test-Path $kaliConfigFile) {
     $driveLetter = $kaliConfigDir.Substring(0,1).ToLower()
     $wslConfigPath = "/mnt/$driveLetter" + ($kaliConfigDir.Substring(2) -replace '\\', '/')
-    Get-ChildItem -Path $kaliConfigDir -File -Force | ForEach-Object {
-        $kaliSetupCommands += "wsl -d kali-linux -u root -- bash -c `"cp '$wslConfigPath/$($_.Name)' /root/ &amp;&amp; cp '$wslConfigPath/$($_.Name)' /home/pentest/ &amp;&amp; chown pentest:pentest '/home/pentest/$($_.Name)'`""
+    $kaliCfgJson = Get-Content -Path $kaliConfigFile -Raw | ConvertFrom-Json
+    $kaliCfgJson.PSObject.Properties | ForEach-Object {
+        $srcFile = $_.Name
+        foreach ($dest in $_.Value) {
+            $kaliSetupCommands += "wsl -d kali-linux -u root -- bash -c `"cp '$wslConfigPath/$srcFile' '$dest'`""
+            if ($dest -like "/home/pentest/*") {
+                $kaliSetupCommands += "wsl -d kali-linux -u root -- bash -c `"chown pentest:pentest '$dest'`""
+            }
+        }
     }
 }
 if (Test-Path $kaliCommandsFile) {
@@ -1723,8 +1813,8 @@ if (Test-Path $kaliCommandsFile) {
 }
 
 if (Test-Path $wslExe) {
-    $wslDistros = &amp; $wslExe -l -q 2&gt;&amp;1 | Out-String
-    if ($wslDistros -match "kali-linux") {
+    $kaliInstalled = (&amp; $wslExe -l -q 2&gt;&amp;1 | Where-Object { $_ -eq "kali-linux" }).Count -gt 0
+    if ($kaliInstalled) {
         $readmeContent += "[+] kali-linux distro installed"
 
         $pentestCheck = &amp; $wslExe -d kali-linux -u root -- id pentest 2&gt;&amp;1 | Out-String
@@ -1817,6 +1907,21 @@ Restart-Computer -Force
     $kaliCommands = Get-RemoteJson -Url $Config.RemoteUrls.KaliCommands -LogFile $LogFile
     if ($kaliCommands) {
         $kaliCommands | Out-File -FilePath (Join-Path $SetupScriptsPath "KaliCommandsList.txt") -Encoding Ascii
+    }
+
+    $winConfig = Get-RemoteJson -Url $Config.RemoteUrls.WindowsConfig -LogFile $LogFile
+    if ($winConfig) {
+        $winConfig | ConvertTo-Json -Depth 10 | Out-File -FilePath (Join-Path $SetupScriptsPath "WindowsConfig.json") -Encoding Ascii
+    }
+
+    $kaliConfig = Get-RemoteJson -Url $Config.RemoteUrls.KaliConfig -LogFile $LogFile
+    if ($kaliConfig) {
+        $kaliConfig | ConvertTo-Json -Depth 10 | Out-File -FilePath (Join-Path $SetupScriptsPath "KaliConfig.json") -Encoding Ascii
+    }
+
+    $winCommands = Get-RemoteJson -Url $Config.RemoteUrls.WindowsCommands -LogFile $LogFile
+    if ($winCommands) {
+        $winCommands | Out-File -FilePath (Join-Path $SetupScriptsPath "WindowsCommandsList.txt") -Encoding Ascii
     }
 
     # Register Stage 2 script to run after next reboot

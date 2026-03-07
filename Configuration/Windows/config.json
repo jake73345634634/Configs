@@ -1,0 +1,4 @@
+{
+    "visual-studio-code.json": ["%APPDATA%/Code/User/settings.json"],
+    "greenshot.ini": ["%APPDATA%/Greenshot/Greenshot.ini"]
+}

@@ -1,0 +1,4 @@
+{
+  ".tmux.conf": ["/root/.tmux.conf", "/home/pentest/.tmux.conf"],
+  ".vimrc": ["/root/.vimrc", "/home/pentest/.vimrc"]
+}
