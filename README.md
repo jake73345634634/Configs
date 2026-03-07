@@ -162,7 +162,7 @@ $\color{Yellow}{\textsf{Note: Sometimes you have to manually login (no password;
 ---
 <h4>TODO</h4>
 
-- [ ] Add a Greenshot [configuration file](https://getgreenshot.org/faq/what-is-the-best-way-to-control-greenshots-configuration-at-install-time)
+- [ ] Make sure everything is put into the re-install section (failed to install, config, changes etc.)
 - [ ] Add GNS3 and images for Cisco switches and routers, Fortinets, Dells
 - [ ] Add VMWare download and checksum verification
 - [ ] License BurpSuite and Nessus
