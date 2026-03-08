@@ -1506,6 +1506,8 @@ if (Test-Path $winConfigFile) {
     $winConfigJson = Get-Content -Path $winConfigFile -Raw | ConvertFrom-Json
     if ($winConfigJson.PSObject.Properties.Count -gt 0) {
         Write-ContainerLog "=== Windows Configuration File Copies ==="
+        # Stop applications that may overwrite their config files
+        Get-Process -Name "Greenshot" -ErrorAction SilentlyContinue | Stop-Process -Force
         $winConfigJson.PSObject.Properties | ForEach-Object {
             $srcFile = $_.Name
             $destinations = $_.Value
@@ -1576,7 +1578,7 @@ if ((Test-Path $kaliConfigFile) -and (Test-Path $wslExe)) {
             $srcFile = $_.Name
             $destinations = $_.Value
             foreach ($dest in $destinations) {
-                &amp; $wslExe -d kali-linux -u root -- bash -c "cp '$wslConfigPath/$srcFile' '$dest'" 2&gt;&amp;1 | Out-File -FilePath $logFile -Append -Encoding Ascii
+                &amp; $wslExe -d kali-linux -u root -- bash -c "cp '$wslConfigPath/$srcFile' '$dest' &amp;&amp; sed -i 's/\r$//' '$dest'" 2&gt;&amp;1 | Out-File -FilePath $logFile -Append -Encoding Ascii
                 if ($dest -like "/home/pentest/*") {
                     &amp; $wslExe -d kali-linux -u root -- bash -c "chown pentest:pentest '$dest'" 2&gt;&amp;1 | Out-File -FilePath $logFile -Append -Encoding Ascii
                 }
@@ -1798,7 +1800,7 @@ if (Test-Path $kaliConfigFile) {
     $kaliCfgJson.PSObject.Properties | ForEach-Object {
         $srcFile = $_.Name
         foreach ($dest in $_.Value) {
-            $kaliSetupCommands += "wsl -d kali-linux -u root -- bash -c `"cp '$wslConfigPath/$srcFile' '$dest'`""
+            $kaliSetupCommands += "wsl -d kali-linux -u root -- bash -c `"cp '$wslConfigPath/$srcFile' '$dest' &amp;&amp; sed -i 's/\r$//' '$dest'`""
             if ($dest -like "/home/pentest/*") {
                 $kaliSetupCommands += "wsl -d kali-linux -u root -- bash -c `"chown pentest:pentest '$dest'`""
             }
