@@ -2,5 +2,6 @@
     "editor.minimap.enabled": false,
     "editor.stickyScroll.enabled": false,
     "workbench.colorTheme": "Hack The Box",
-    "chat.disableAIFeatures": true
+    "chat.disableAIFeatures": true,
+    "terminal.integrated.stickyScroll.enabled": false
 }
