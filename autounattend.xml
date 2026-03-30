@@ -769,6 +769,7 @@ function New-DirectoryStructure {
         Linux            = New-Item -Path $toolsDir -Name "Linux" -ItemType Directory -Force
         ActiveDirectory  = New-Item -Path $toolsDir -Name "Active_Directory" -ItemType Directory -Force
         Network          = New-Item -Path $toolsDir -Name "Network" -ItemType Directory -Force
+        Firewall         = New-Item -Path $toolsDir -Name "Firewall" -ItemType Directory -Force
         Kubernetes       = New-Item -Path $toolsDir -Name "Kubernetes" -ItemType Directory -Force
         Azure            = New-Item -Path $toolsDir -Name "Azure" -ItemType Directory -Force
         Resources        = New-Item -Path $toolsDir -Name "Resources" -ItemType Directory -Force
@@ -1049,6 +1050,7 @@ function Install-Repositories {
         'Linux'            = $ToolDirs.Linux.FullName
         'Active_Directory' = $ToolDirs.ActiveDirectory.FullName
         'Network'          = $ToolDirs.Network.FullName
+        'Firewall'         = $ToolDirs.Firewall.FullName
         'Kubernetes'       = $ToolDirs.Kubernetes.FullName
         'Azure'            = $ToolDirs.Azure.FullName
         'Resources'        = $ToolDirs.Resources.FullName
@@ -1158,6 +1160,7 @@ function Install-Files {
         'Linux'            = $ToolDirs.Linux.FullName
         'Active_Directory' = $ToolDirs.ActiveDirectory.FullName
         'Network'          = $ToolDirs.Network.FullName
+        'Firewall'         = $ToolDirs.Firewall.FullName
         'Kubernetes'       = $ToolDirs.Kubernetes.FullName
         'Azure'            = $ToolDirs.Azure.FullName
         'Resources'        = $ToolDirs.Resources.FullName
