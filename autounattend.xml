@@ -1338,7 +1338,21 @@ function Write-CommandOutput {
 
 Write-ContainerLog "=== Container Installation Stage 2 ==="
 
+# Prevent sleep during setup
+powercfg.exe /change standby-timeout-ac 0
+powercfg.exe /change standby-timeout-dc 0
+powercfg.exe /change hibernate-timeout-ac 0
+powercfg.exe /change hibernate-timeout-dc 0
+
+# Pre-declare variables needed by later sections (README verification)
+$dockerDesktopExe = "$env:ProgramFiles\Docker\Docker\Docker Desktop.exe"
+$dockerExe = "$env:ProgramFiles\Docker\Docker\resources\bin\docker.exe"
+$containersFile = "$env:SystemRoot\Setup\Scripts\ContainerList.txt"
+$dockerReady = $false
+
 # Download and install Docker Desktop
+:dockerSetup do {
+
 $dockerUri = [uri]::New("https://desktop.docker.com/win/main/amd64/Docker%20Desktop%20Installer.exe")
 $dockerInstaller = "$env:TEMP\DockerDesktopInstaller.exe"
 $dockerDownloaded = $false
@@ -1360,7 +1374,7 @@ for ($attempt = 1; $attempt -le 3; $attempt++) {
 
 if (-not $dockerDownloaded) {
     Write-ContainerLog "ERROR: Failed to download Docker Desktop after 3 attempts"
-    exit 1
+    break dockerSetup
 }
 
 try {
@@ -1371,12 +1385,11 @@ try {
 }
 catch {
     Write-ContainerLog "ERROR: Failed to install Docker Desktop: $_"
-    exit 1
+    break dockerSetup
 }
 
 # Wait for Docker Desktop executable
 $dockerTimeout = [datetime]::Now.AddMinutes(5)
-$dockerDesktopExe = "$env:ProgramFiles\Docker\Docker\Docker Desktop.exe"
 
 Write-ContainerLog "Waiting for Docker Desktop executable..."
 while ($true) {
@@ -1388,7 +1401,7 @@ while ($true) {
     
     if ([datetime]::Now -gt $dockerTimeout) {
         Write-ContainerLog "ERROR: Docker Desktop executable not found after timeout"
-        exit 1
+        break dockerSetup
     }
     
     Start-Sleep -Seconds 1
@@ -1396,7 +1409,6 @@ while ($true) {
 
 # Wait for Docker Engine to be ready
 $engineTimeout = [datetime]::Now.AddMinutes(5)
-$dockerExe = "$env:ProgramFiles\Docker\Docker\resources\bin\docker.exe"
 
 Write-ContainerLog "Waiting for Docker Engine to be ready..."
 while ($true) {
@@ -1405,6 +1417,7 @@ while ($true) {
         
         if ($info -match "Name: docker-desktop") {
             Write-ContainerLog "Docker Engine is ready"
+            $dockerReady = $true
             break
         }
     }
@@ -1414,7 +1427,7 @@ while ($true) {
     
     if ([datetime]::Now -gt $engineTimeout) {
         Write-ContainerLog "ERROR: Docker Engine failed to initialize"
-        exit 1
+        break dockerSetup
     }
     
     Start-Sleep -Seconds 2
@@ -1440,8 +1453,6 @@ if (Test-Path $dockerConfigFile) {
 Write-ContainerLog "Docker credential store configured"
 
 # Pull container images
-$containersFile = "$env:SystemRoot\Setup\Scripts\ContainerList.txt"
-
 if (Test-Path $containersFile) {
     Get-Content -Path $containersFile | ForEach-Object {
         $container = $_.Trim()
@@ -1463,6 +1474,7 @@ if (Test-Path $containersFile) {
         }
     }
 }
+} while ($false)
 
 # Cleanup desktop shortcuts
 Write-ContainerLog "Cleaning up..."
@@ -1494,7 +1506,7 @@ if (Test-Path $wslExe) {
     $kaliDeadline = [datetime]::Now.AddMinutes(10)
     Write-ContainerLog "Waiting for kali-linux distro to become available..."
     while ([datetime]::Now -lt $kaliDeadline) {
-        $kaliFound = (&amp; $wslExe -l -q 2&gt;&amp;1 | Where-Object { $_ -eq "kali-linux" }).Count -gt 0
+        $kaliFound = ((&amp; $wslExe -l -q 2&gt;&amp;1 | Out-String) -replace '\0','' -split '\r?\n' | Where-Object { $_.Trim() -eq "kali-linux" }).Count -gt 0
         if ($kaliFound) {
             # Distro registered, try to initialize it
             $cmdOutput = &amp; $wslExe -d kali-linux -u root -- echo "Kali initialized" 2&gt;&amp;1 | Out-String
@@ -1539,7 +1551,7 @@ if (Test-Path $wslExe) {
         Write-ContainerLog "Configuring non-interactive apt and needrestart..."
         $cmdOutput = &amp; $wslExe -d kali-linux -u root -- bash -c "echo 'debconf debconf/frontend select Noninteractive' | debconf-set-selections" 2&gt;&amp;1 | Out-String
         Write-CommandOutput -Output $cmdOutput -LogFile $logFile
-        $cmdOutput = &amp; $wslExe -d kali-linux -u root -- bash -c "mkdir -p /etc/needrestart/conf.d &amp;&amp; printf '\$nrconf{restart} = \x22a\x22;\n' > /etc/needrestart/conf.d/auto.conf" 2&gt;&amp;1 | Out-String
+        $cmdOutput = &amp; $wslExe -d kali-linux -u root -- bash -c "mkdir -p /etc/needrestart/conf.d &amp;&amp; printf '`$nrconf{restart} = \x22a\x22;\n' > /etc/needrestart/conf.d/auto.conf" 2&gt;&amp;1 | Out-String
         Write-CommandOutput -Output $cmdOutput -LogFile $logFile
         $cmdOutput = &amp; $wslExe -d kali-linux -u root -- bash -c "echo 'DEBIAN_FRONTEND=noninteractive' >> /etc/environment" 2&gt;&amp;1 | Out-String
         Write-CommandOutput -Output $cmdOutput -LogFile $logFile
@@ -1606,6 +1618,9 @@ if (Test-Path $winConfigFile) {
         }
     }
 }
+
+# Refresh PATH to include applications installed in Stage 1
+$env:Path = [System.Environment]::GetEnvironmentVariable("Path", "Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path", "User")
 
 # Execute Windows commands
 $winCommandsFile = "$env:SystemRoot\Setup\Scripts\WindowsCommandsList.txt"
@@ -1893,7 +1908,7 @@ if (Test-Path $kaliCommandsFile) {
 }
 
 if (Test-Path $wslExe) {
-    $kaliInstalled = (&amp; $wslExe -l -q 2&gt;&amp;1 | Where-Object { $_ -eq "kali-linux" }).Count -gt 0
+    $kaliInstalled = ((&amp; $wslExe -l -q 2&gt;&amp;1 | Out-String) -replace '\0','' -split '\r?\n' | Where-Object { $_.Trim() -eq "kali-linux" }).Count -gt 0
     if ($kaliInstalled) {
         $readmeContent += "[+] kali-linux distro installed"
 
