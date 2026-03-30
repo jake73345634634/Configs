@@ -643,16 +643,42 @@ function Write-Log {
         [string]$LogFile,
         [switch]$IsError
     )
-    
+
     $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
     $logMessage = "[$timestamp] $Message"
-    
+
     if ($IsError) {
         $logMessage = "[ERROR] $logMessage"
     }
-    
-    $logMessage | Out-File -FilePath $LogFile -Append -Encoding Ascii
+
+    $logMessage | Out-File -FilePath $LogFile -Append -Encoding UTF8
     Write-Host $logMessage
+}
+
+function Sanitize-LogOutput {
+    param([string]$Text)
+    if (-not $Text) { return $Text }
+    $Text = $Text -replace '\x1b\[[0-9;]*[a-zA-Z]', ''
+    $Text = $Text -replace '\x1b\[\?[0-9;]*[a-zA-Z]', ''
+    $Text = $Text -replace '\x1b\][^\x07]*\x07', ''
+    $Text = $Text -replace '[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]', ''
+    $Text = $Text -replace '[━─░▒▓█▏▎▍▌▋▊▉]', ''
+    $Text = $Text -replace '\r(?!\n)', ''
+    $Text = $Text -replace '(\r?\n){3,}', "`n`n"
+    return $Text.Trim()
+}
+
+function Write-CommandOutput {
+    param(
+        [string]$Output,
+        [string]$LogFile
+    )
+    if ($Output) {
+        $clean = Sanitize-LogOutput $Output
+        if ($clean) {
+            $clean | Out-File -FilePath $LogFile -Append -Encoding UTF8
+        }
+    }
 }
 
 function Invoke-WithRetry {
@@ -889,7 +915,8 @@ function Install-PowerShellModules {
         Write-Log "Installing module: $module" -LogFile $LogFile
         try {
             Invoke-WithRetry -Description "Install module $module" -LogFile $LogFile -ScriptBlock {
-                Install-Module -Name $module -Scope CurrentUser -ErrorAction Stop | Out-File -FilePath $LogFile -Append -Encoding Ascii
+                $cmdOutput = Install-Module -Name $module -Scope CurrentUser -ErrorAction Stop 2&gt;&amp;1 | Out-String
+                Write-CommandOutput -Output $cmdOutput -LogFile $LogFile
             }
         } catch {
             Write-Log "Skipping module: $module" -LogFile $LogFile -IsError
@@ -913,7 +940,8 @@ function Install-WindowsCapabilities {
         Write-Log "Adding capability: $capability" -LogFile $LogFile
         try {
             Invoke-WithRetry -Description "Add capability $capability" -LogFile $LogFile -ScriptBlock {
-                Add-WindowsCapability -Name $capability -Online -ErrorAction Stop | Out-File -FilePath $LogFile -Append -Encoding Ascii
+                $cmdOutput = Add-WindowsCapability -Name $capability -Online -ErrorAction Stop 2&gt;&amp;1 | Out-String
+                Write-CommandOutput -Output $cmdOutput -LogFile $LogFile
             }
         } catch {
             Write-Log "Skipping capability: $capability" -LogFile $LogFile -IsError
@@ -964,6 +992,7 @@ function Install-WingetApplications {
             "--exact",
             "--id", $appId,
             "--silent",
+            "--disable-interactivity",
             "--accept-package-agreements",
             "--accept-source-agreements",
             "--source", "winget"
@@ -976,7 +1005,7 @@ function Install-WingetApplications {
         try {
             Invoke-WithRetry -Description "Install winget app $appId" -LogFile $LogFile -ScriptBlock {
                 $output = &amp; $wingetExe @arguments 2&gt;&amp;1 | Out-String
-                $output | Out-File -FilePath $LogFile -Append -Encoding Ascii
+                Write-CommandOutput -Output $output -LogFile $LogFile
                 if ($LASTEXITCODE -ne 0 -and $LASTEXITCODE -ne $null) {
                     throw "winget exited with code $LASTEXITCODE"
                 }
@@ -1037,7 +1066,7 @@ function Install-Repositories {
                     Remove-Item -Path $destination -Recurse -Force -ErrorAction SilentlyContinue
                 }
                 $output = &amp; $gitExe clone $repoUrl $destination 2&gt;&amp;1 | Out-String
-                $output | Out-File -FilePath $LogFile -Append -Encoding Ascii
+                Write-CommandOutput -Output $output -LogFile $LogFile
                 if ($LASTEXITCODE -ne 0) {
                     throw "git clone exited with code $LASTEXITCODE"
                 }
@@ -1053,9 +1082,11 @@ function Install-Repositories {
             Write-Log "Installing Python dependencies for: $repoUrl" -LogFile $LogFile
             try {
                 $venvPath = Join-Path $destination ".venv"
-                &amp; $pythonExe -m venv $venvPath 2&gt;&amp;1 | Out-File -FilePath $LogFile -Append -Encoding Ascii
+                $cmdOutput = &amp; $pythonExe -m venv $venvPath 2&gt;&amp;1 | Out-String
+                Write-CommandOutput -Output $cmdOutput -LogFile $LogFile
                 $pipExe = Join-Path $venvPath "Scripts\pip.exe"
-                &amp; $pipExe install -r $requirementsFile 2&gt;&amp;1 | Out-File -FilePath $LogFile -Append -Encoding Ascii
+                $cmdOutput = &amp; $pipExe install -r $requirementsFile 2&gt;&amp;1 | Out-String
+                Write-CommandOutput -Output $cmdOutput -LogFile $LogFile
                 Write-Log "Python dependencies installed for: $repoName" -LogFile $LogFile
             } catch {
                 Write-Log "Failed to install Python dependencies for $repoUrl : $_" -LogFile $LogFile -IsError
@@ -1169,7 +1200,8 @@ function Install-Files {
                 } elseif ($fileName -match '\.7z$') {
                     $sevenZip = "$env:ProgramFiles\7-Zip\7z.exe"
                     $extractDir = Join-Path $allToolsDir ($fileName -replace '\.7z$', '')
-                    &amp; $sevenZip x $destination "-o$extractDir" -y 2&gt;&amp;1 | Out-File -FilePath $LogFile -Append -Encoding Ascii
+                    $cmdOutput = &amp; $sevenZip x $destination "-o$extractDir" -y 2&gt;&amp;1 | Out-String
+                    Write-CommandOutput -Output $cmdOutput -LogFile $LogFile
                     Remove-Item -LiteralPath $destination -Force
                     # Flatten single-item archives
                     $items = Get-ChildItem -Path $extractDir -Force
@@ -1225,7 +1257,8 @@ function Install-WSL {
     Write-Host "`nInstalling WSL..."
     Write-Log "=== WSL Installation ===" -LogFile $LogFile
     
-    wsl --install -d kali-linux 2&gt;&amp;1 | Out-File -FilePath $LogFile -Append -Encoding Ascii
+    $cmdOutput = wsl --install -d kali-linux 2&gt;&amp;1 | Out-String
+    Write-CommandOutput -Output $cmdOutput -LogFile $LogFile
 }
 
 function Invoke-WindowsActivation {
@@ -1235,7 +1268,8 @@ function Invoke-WindowsActivation {
     Write-Log "=== Windows/Office Activation ===" -LogFile $LogFile
     
     try {
-        &amp; ([ScriptBlock]::Create((Invoke-RestMethod -Uri https://get.activated.win))) /HWID /Ohook 2&gt;&amp;1 | Out-File -FilePath $LogFile -Append -Encoding Ascii
+        $cmdOutput = &amp; ([ScriptBlock]::Create((Invoke-RestMethod -Uri https://get.activated.win))) /HWID /Ohook 2&gt;&amp;1 | Out-String
+        Write-CommandOutput -Output $cmdOutput -LogFile $LogFile
     }
     catch {
         Write-Log "Activation failed: $_" -LogFile $LogFile -IsError
@@ -1273,7 +1307,33 @@ $logFile = "$env:USERPROFILE\Desktop\Build Logs\containers.txt"
 function Write-ContainerLog {
     param([string]$Message)
     $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
-    "[$timestamp] $Message" | Out-File -FilePath $logFile -Append -Encoding Ascii
+    "[$timestamp] $Message" | Out-File -FilePath $logFile -Append -Encoding UTF8
+}
+
+function Sanitize-LogOutput {
+    param([string]$Text)
+    if (-not $Text) { return $Text }
+    $Text = $Text -replace '\x1b\[[0-9;]*[a-zA-Z]', ''
+    $Text = $Text -replace '\x1b\[\?[0-9;]*[a-zA-Z]', ''
+    $Text = $Text -replace '\x1b\][^\x07]*\x07', ''
+    $Text = $Text -replace '[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]', ''
+    $Text = $Text -replace '[━─░▒▓█▏▎▍▌▋▊▉]', ''
+    $Text = $Text -replace '\r(?!\n)', ''
+    $Text = $Text -replace '(\r?\n){3,}', "`n`n"
+    return $Text.Trim()
+}
+
+function Write-CommandOutput {
+    param(
+        [string]$Output,
+        [string]$LogFile
+    )
+    if ($Output) {
+        $clean = Sanitize-LogOutput $Output
+        if ($clean) {
+            $clean | Out-File -FilePath $LogFile -Append -Encoding UTF8
+        }
+    }
 }
 
 Write-ContainerLog "=== Container Installation Stage 2 ==="
@@ -1389,7 +1449,8 @@ if (Test-Path $containersFile) {
             $pulled = $false
             for ($attempt = 1; $attempt -le 3; $attempt++) {
                 Write-ContainerLog "Pulling container: $container (attempt $attempt/3)"
-                &amp; $dockerExe pull $container 2&gt;&amp;1 | Out-File -FilePath $logFile -Append -Encoding Ascii
+                $cmdOutput = &amp; $dockerExe pull $container 2&gt;&amp;1 | Out-String
+                Write-CommandOutput -Output $cmdOutput -LogFile $logFile
                 if ($LASTEXITCODE -eq 0) {
                     $pulled = $true
                     break
@@ -1424,7 +1485,8 @@ if (Test-Path $wslExe) {
 
     # Re-run install now that WSL platform is active post-reboot
     Write-ContainerLog "Triggering kali-linux distro installation..."
-    &amp; $wslExe --install -d kali-linux --no-launch 2&gt;&amp;1 | Out-File -FilePath $logFile -Append -Encoding Ascii
+    $cmdOutput = &amp; $wslExe --install -d kali-linux --no-launch 2&gt;&amp;1 | Out-String
+    Write-CommandOutput -Output $cmdOutput -LogFile $logFile
     Write-ContainerLog "Install command finished (exit code: $LASTEXITCODE)"
 
     # Wait for kali-linux distro to be available
@@ -1435,7 +1497,8 @@ if (Test-Path $wslExe) {
         $kaliFound = (&amp; $wslExe -l -q 2&gt;&amp;1 | Where-Object { $_ -eq "kali-linux" }).Count -gt 0
         if ($kaliFound) {
             # Distro registered, try to initialize it
-            &amp; $wslExe -d kali-linux -u root -- echo "Kali initialized" 2&gt;&amp;1 | Out-File -FilePath $logFile -Append -Encoding Ascii
+            $cmdOutput = &amp; $wslExe -d kali-linux -u root -- echo "Kali initialized" 2&gt;&amp;1 | Out-String
+            Write-CommandOutput -Output $cmdOutput -LogFile $logFile
             if ($LASTEXITCODE -eq 0) {
                 $kaliReady = $true
                 Write-ContainerLog "kali-linux distro is ready"
@@ -1449,12 +1512,15 @@ if (Test-Path $wslExe) {
     if ($kaliReady) {
         # Create pentest user
         Write-ContainerLog "Creating pentest user..."
-        &amp; $wslExe -d kali-linux -u root -- useradd -m -s /bin/bash pentest 2&gt;&amp;1 | Out-File -FilePath $logFile -Append -Encoding Ascii
-        &amp; $wslExe -d kali-linux -u root -- passwd -d pentest 2&gt;&amp;1 | Out-File -FilePath $logFile -Append -Encoding Ascii
+        $cmdOutput = &amp; $wslExe -d kali-linux -u root -- useradd -m -s /bin/bash pentest 2&gt;&amp;1 | Out-String
+        Write-CommandOutput -Output $cmdOutput -LogFile $logFile
+        $cmdOutput = &amp; $wslExe -d kali-linux -u root -- passwd -d pentest 2&gt;&amp;1 | Out-String
+        Write-CommandOutput -Output $cmdOutput -LogFile $logFile
 
         # Configure NOPASSWD sudo
         Write-ContainerLog "Configuring NOPASSWD sudo for pentest user..."
-        &amp; $wslExe -d kali-linux -u root -- bash -c "echo 'pentest ALL=(ALL) NOPASSWD: ALL' > /etc/sudoers.d/pentest &amp;&amp; chmod 440 /etc/sudoers.d/pentest" 2&gt;&amp;1 | Out-File -FilePath $logFile -Append -Encoding Ascii
+        $cmdOutput = &amp; $wslExe -d kali-linux -u root -- bash -c "echo 'pentest ALL=(ALL) NOPASSWD: ALL' > /etc/sudoers.d/pentest &amp;&amp; chmod 440 /etc/sudoers.d/pentest" 2&gt;&amp;1 | Out-String
+        Write-CommandOutput -Output $cmdOutput -LogFile $logFile
 
         # Set default WSL user to pentest (UID 1000)
         Write-ContainerLog "Setting default WSL user to pentest..."
@@ -1485,7 +1551,8 @@ if (Test-Path $wslExe) {
                     $executed = $false
                     for ($attempt = 1; $attempt -le 3; $attempt++) {
                         Write-ContainerLog "Executing Kali command: $kaliCmd (attempt $attempt/3)"
-                        &amp; $wslExe -d kali-linux -u pentest -- bash -c $kaliCmd 2&gt;&amp;1 | Out-File -FilePath $logFile -Append -Encoding Ascii
+                        $cmdOutput = &amp; $wslExe -d kali-linux -u pentest -- bash -c $kaliCmd 2&gt;&amp;1 | Out-String
+                        Write-CommandOutput -Output $cmdOutput -LogFile $logFile
                         if ($LASTEXITCODE -eq 0) {
                             $executed = $true
                             $kaliCmdCount++
@@ -1512,6 +1579,8 @@ if (Test-Path $winConfigFile) {
     $winConfigJson = Get-Content -Path $winConfigFile -Raw | ConvertFrom-Json
     if ($winConfigJson.PSObject.Properties.Count -gt 0) {
         Write-ContainerLog "=== Windows Configuration File Copies ==="
+        # Stop applications that may overwrite their config files
+        Get-Process -Name "Greenshot" -ErrorAction SilentlyContinue | Stop-Process -Force
         $winConfigJson.PSObject.Properties | ForEach-Object {
             $srcFile = $_.Name
             $destinations = $_.Value
@@ -1549,7 +1618,7 @@ if (Test-Path $winCommandsFile) {
                 try {
                     Push-Location $winConfigDir
                     $output = Invoke-Expression $winCmd 2&gt;&amp;1 | Out-String
-                    $output | Out-File -FilePath $logFile -Append -Encoding Ascii
+                    Write-CommandOutput -Output $output -LogFile $logFile
                     Pop-Location
                     $executed = $true
                     $winCmdCount++
@@ -1557,7 +1626,7 @@ if (Test-Path $winCommandsFile) {
                 }
                 catch {
                     Pop-Location
-                    "$_" | Out-File -FilePath $logFile -Append -Encoding Ascii
+                    Write-CommandOutput -Output "$_" -LogFile $logFile
                     if ($attempt -lt 3) { Start-Sleep -Seconds 10 }
                 }
             }
@@ -1582,9 +1651,11 @@ if ((Test-Path $kaliConfigFile) -and (Test-Path $wslExe)) {
             $srcFile = $_.Name
             $destinations = $_.Value
             foreach ($dest in $destinations) {
-                &amp; $wslExe -d kali-linux -u root -- bash -c "cp '$wslConfigPath/$srcFile' '$dest'" 2&gt;&amp;1 | Out-File -FilePath $logFile -Append -Encoding Ascii
+                $cmdOutput = &amp; $wslExe -d kali-linux -u root -- bash -c "cp '$wslConfigPath/$srcFile' '$dest' &amp;&amp; sed -i 's/\r$//' '$dest'" 2&gt;&amp;1 | Out-String
+                Write-CommandOutput -Output $cmdOutput -LogFile $logFile
                 if ($dest -like "/home/pentest/*") {
-                    &amp; $wslExe -d kali-linux -u root -- bash -c "chown pentest:pentest '$dest'" 2&gt;&amp;1 | Out-File -FilePath $logFile -Append -Encoding Ascii
+                    $cmdOutput = &amp; $wslExe -d kali-linux -u root -- bash -c "chown pentest:pentest '$dest'" 2&gt;&amp;1 | Out-String
+                    Write-CommandOutput -Output $cmdOutput -LogFile $logFile
                 }
                 Write-ContainerLog "Copied $srcFile to $dest"
             }
@@ -1661,16 +1732,16 @@ if ((Test-Path $wingetFile) -and (Test-Path $wingetExe)) {
         $appId = $_.Trim()
         if ($appId) {
             try {
-                $result = &amp; $wingetExe list --id $appId --exact --accept-source-agreements 2&gt;&amp;1 | Out-String
+                $result = &amp; $wingetExe list --id $appId --exact --disable-interactivity --accept-source-agreements 2&gt;&amp;1 | Out-String
                 if ($result -match [regex]::Escape($appId)) {
                     $readmeContent += "[+] $appId"
                 } else {
                     $readmeContent += "[-] $appId"
-                    $failedCommands += "winget install --exact --id $appId --silent --accept-package-agreements --accept-source-agreements --source winget"
+                    $failedCommands += "winget install --exact --id $appId --silent --disable-interactivity --accept-package-agreements --accept-source-agreements --source winget"
                 }
             } catch {
                 $readmeContent += "[-] $appId"
-                $failedCommands += "winget install --exact --id $appId --silent --accept-package-agreements --accept-source-agreements --source winget"
+                $failedCommands += "winget install --exact --id $appId --silent --disable-interactivity --accept-package-agreements --accept-source-agreements --source winget"
             }
         }
     }
@@ -1804,7 +1875,7 @@ if (Test-Path $kaliConfigFile) {
     $kaliCfgJson.PSObject.Properties | ForEach-Object {
         $srcFile = $_.Name
         foreach ($dest in $_.Value) {
-            $kaliSetupCommands += "wsl -d kali-linux -u root -- bash -c `"cp '$wslConfigPath/$srcFile' '$dest'`""
+            $kaliSetupCommands += "wsl -d kali-linux -u root -- bash -c `"cp '$wslConfigPath/$srcFile' '$dest' &amp;&amp; sed -i 's/\r$//' '$dest'`""
             if ($dest -like "/home/pentest/*") {
                 $kaliSetupCommands += "wsl -d kali-linux -u root -- bash -c `"chown pentest:pentest '$dest'`""
             }
