@@ -1469,6 +1469,12 @@ if (Test-Path $wslExe) {
             }
         }
 
+        # Prevent interactive prompts during apt operations
+        Write-ContainerLog "Configuring non-interactive apt and needrestart..."
+        &amp; $wslExe -d kali-linux -u root -- bash -c "echo 'debconf debconf/frontend select Noninteractive' | debconf-set-selections" 2&gt;&amp;1 | Out-File -FilePath $logFile -Append -Encoding Ascii
+        &amp; $wslExe -d kali-linux -u root -- bash -c "mkdir -p /etc/needrestart/conf.d &amp;&amp; printf '\$nrconf{restart} = \x22a\x22;\n' > /etc/needrestart/conf.d/auto.conf" 2&gt;&amp;1 | Out-File -FilePath $logFile -Append -Encoding Ascii
+        &amp; $wslExe -d kali-linux -u root -- bash -c "echo 'DEBIAN_FRONTEND=noninteractive' >> /etc/environment" 2&gt;&amp;1 | Out-File -FilePath $logFile -Append -Encoding Ascii
+
         # Execute commands from KaliCommandsList.txt
         $kaliCommandsFile = "$env:SystemRoot\Setup\Scripts\KaliCommandsList.txt"
         if (Test-Path $kaliCommandsFile) {
