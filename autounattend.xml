@@ -623,6 +623,9 @@ $Config = @{
     DefenderExclusions = @(
         "$env:USERPROFILE\Desktop\Job"
         "$env:USERPROFILE\Desktop\Tools"
+        "$env:APPDATA"
+        "$env:LOCALAPPDATA"
+        "$env:USERPROFILE\AppData\LocalLow"
     )
     EdgeBookmarks = @(
         @{ toplevel_name = "Tools" }
@@ -1093,6 +1096,25 @@ function Install-Repositories {
             }
         }
 
+        # If the repo has a pyproject.toml (and no requirements.txt), install the project
+        $pyprojectFile = Join-Path $destination "pyproject.toml"
+        if (-not (Test-Path $requirementsFile) -and (Test-Path $pyprojectFile) -and (Test-Path $pythonExe)) {
+            Write-Log "Installing Python project (pyproject.toml) for: $repoUrl" -LogFile $LogFile
+            try {
+                $venvPath = Join-Path $destination ".venv"
+                if (-not (Test-Path $venvPath)) {
+                    $cmdOutput = &amp; $pythonExe -m venv $venvPath 2&gt;&amp;1 | Out-String
+                    Write-CommandOutput -Output $cmdOutput -LogFile $LogFile
+                }
+                $pipExe = Join-Path $venvPath "Scripts\pip.exe"
+                $cmdOutput = &amp; $pipExe install $destination 2&gt;&amp;1 | Out-String
+                Write-CommandOutput -Output $cmdOutput -LogFile $LogFile
+                Write-Log "Python project (pyproject.toml) installed for: $repoName" -LogFile $LogFile
+            } catch {
+                Write-Log "Failed to install Python project (pyproject.toml) for $repoUrl : $_" -LogFile $LogFile -IsError
+            }
+        }
+
         # Create symlinks in each tagged category folder
         foreach ($tag in $repo.tags) {
             if ($tagDirMap.ContainsKey($tag)) {
@@ -1388,33 +1410,39 @@ catch {
     break dockerSetup
 }
 
-# Wait for Docker Desktop executable
-$dockerTimeout = [datetime]::Now.AddMinutes(5)
+# Pre-configure Docker Desktop to skip onboarding dialog
+$dockerAppDataDir = "$env:APPDATA\Docker"
+if (-not (Test-Path $dockerAppDataDir)) {
+    New-Item -Path $dockerAppDataDir -ItemType Directory -Force | Out-Null
+}
+'{"onboardingComplete":true,"openAtLogin":false}' | Out-File "$dockerAppDataDir\settings-store.json" -Encoding UTF8
+Write-ContainerLog "Pre-configured Docker Desktop settings to skip onboarding"
 
+# Wait for Docker Desktop executable (no timeout - retries indefinitely)
 Write-ContainerLog "Waiting for Docker Desktop executable..."
+$exeWaitCount = 0
 while ($true) {
     if (Test-Path $dockerDesktopExe) {
         Write-ContainerLog "Starting Docker Desktop..."
         Start-Process -FilePath $dockerDesktopExe -WindowStyle Hidden
         break
     }
-    
-    if ([datetime]::Now -gt $dockerTimeout) {
-        Write-ContainerLog "ERROR: Docker Desktop executable not found after timeout"
-        break dockerSetup
+
+    $exeWaitCount++
+    if ($exeWaitCount % 300 -eq 0) {
+        Write-ContainerLog "Still waiting for Docker Desktop executable... ($([math]::Round($exeWaitCount / 60)) minutes elapsed)"
     }
-    
+
     Start-Sleep -Seconds 1
 }
 
 # Wait for Docker Engine to be ready
-$engineTimeout = [datetime]::Now.AddMinutes(5)
-
 Write-ContainerLog "Waiting for Docker Engine to be ready..."
+$engineWaitCount = 0
 while ($true) {
     try {
         $info = &amp; $dockerExe info 2&gt;&amp;1 | Out-String
-        
+
         if ($info -match "Name: docker-desktop") {
             Write-ContainerLog "Docker Engine is ready"
             $dockerReady = $true
@@ -1424,12 +1452,12 @@ while ($true) {
     catch {
         # Continue waiting
     }
-    
-    if ([datetime]::Now -gt $engineTimeout) {
-        Write-ContainerLog "ERROR: Docker Engine failed to initialize"
-        break dockerSetup
+
+    $engineWaitCount++
+    if ($engineWaitCount % 150 -eq 0) {
+        Write-ContainerLog "Still waiting for Docker Engine... ($([math]::Round($engineWaitCount * 2 / 60)) minutes elapsed)"
     }
-    
+
     Start-Sleep -Seconds 2
 }
 
