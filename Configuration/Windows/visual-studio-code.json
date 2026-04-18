@@ -3,5 +3,7 @@
     "editor.stickyScroll.enabled": false,
     "workbench.colorTheme": "Hack The Box",
     "chat.disableAIFeatures": true,
-    "terminal.integrated.stickyScroll.enabled": false
+    "terminal.integrated.stickyScroll.enabled": false,
+    "terminal.integrated.cwd": "${env:USERPROFILE}/Desktop",
+    "window.autoDetectColorScheme": false
 }

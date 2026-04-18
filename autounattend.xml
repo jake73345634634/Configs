@@ -623,6 +623,9 @@ $Config = @{
     DefenderExclusions = @(
         "$env:USERPROFILE\Desktop\Job"
         "$env:USERPROFILE\Desktop\Tools"
+        "$env:APPDATA"
+        "$env:LOCALAPPDATA"
+        "$env:USERPROFILE\AppData\LocalLow"
     )
     EdgeBookmarks = @(
         @{ toplevel_name = "Tools" }
@@ -766,6 +769,7 @@ function New-DirectoryStructure {
         Linux            = New-Item -Path $toolsDir -Name "Linux" -ItemType Directory -Force
         ActiveDirectory  = New-Item -Path $toolsDir -Name "Active_Directory" -ItemType Directory -Force
         Network          = New-Item -Path $toolsDir -Name "Network" -ItemType Directory -Force
+        Firewall         = New-Item -Path $toolsDir -Name "Firewall" -ItemType Directory -Force
         Kubernetes       = New-Item -Path $toolsDir -Name "Kubernetes" -ItemType Directory -Force
         Azure            = New-Item -Path $toolsDir -Name "Azure" -ItemType Directory -Force
         Resources        = New-Item -Path $toolsDir -Name "Resources" -ItemType Directory -Force
@@ -1046,6 +1050,7 @@ function Install-Repositories {
         'Linux'            = $ToolDirs.Linux.FullName
         'Active_Directory' = $ToolDirs.ActiveDirectory.FullName
         'Network'          = $ToolDirs.Network.FullName
+        'Firewall'         = $ToolDirs.Firewall.FullName
         'Kubernetes'       = $ToolDirs.Kubernetes.FullName
         'Azure'            = $ToolDirs.Azure.FullName
         'Resources'        = $ToolDirs.Resources.FullName
@@ -1093,6 +1098,25 @@ function Install-Repositories {
             }
         }
 
+        # If the repo has a pyproject.toml (and no requirements.txt), install the project
+        $pyprojectFile = Join-Path $destination "pyproject.toml"
+        if (-not (Test-Path $requirementsFile) -and (Test-Path $pyprojectFile) -and (Test-Path $pythonExe)) {
+            Write-Log "Installing Python project (pyproject.toml) for: $repoUrl" -LogFile $LogFile
+            try {
+                $venvPath = Join-Path $destination ".venv"
+                if (-not (Test-Path $venvPath)) {
+                    $cmdOutput = &amp; $pythonExe -m venv $venvPath 2&gt;&amp;1 | Out-String
+                    Write-CommandOutput -Output $cmdOutput -LogFile $LogFile
+                }
+                $pipExe = Join-Path $venvPath "Scripts\pip.exe"
+                $cmdOutput = &amp; $pipExe install $destination 2&gt;&amp;1 | Out-String
+                Write-CommandOutput -Output $cmdOutput -LogFile $LogFile
+                Write-Log "Python project (pyproject.toml) installed for: $repoName" -LogFile $LogFile
+            } catch {
+                Write-Log "Failed to install Python project (pyproject.toml) for $repoUrl : $_" -LogFile $LogFile -IsError
+            }
+        }
+
         # Create symlinks in each tagged category folder
         foreach ($tag in $repo.tags) {
             if ($tagDirMap.ContainsKey($tag)) {
@@ -1136,6 +1160,7 @@ function Install-Files {
         'Linux'            = $ToolDirs.Linux.FullName
         'Active_Directory' = $ToolDirs.ActiveDirectory.FullName
         'Network'          = $ToolDirs.Network.FullName
+        'Firewall'         = $ToolDirs.Firewall.FullName
         'Kubernetes'       = $ToolDirs.Kubernetes.FullName
         'Azure'            = $ToolDirs.Azure.FullName
         'Resources'        = $ToolDirs.Resources.FullName
@@ -1338,7 +1363,21 @@ function Write-CommandOutput {
 
 Write-ContainerLog "=== Container Installation Stage 2 ==="
 
+# Prevent sleep during setup
+powercfg.exe /change standby-timeout-ac 0
+powercfg.exe /change standby-timeout-dc 0
+powercfg.exe /change hibernate-timeout-ac 0
+powercfg.exe /change hibernate-timeout-dc 0
+
+# Pre-declare variables needed by later sections (README verification)
+$dockerDesktopExe = "$env:ProgramFiles\Docker\Docker\Docker Desktop.exe"
+$dockerExe = "$env:ProgramFiles\Docker\Docker\resources\bin\docker.exe"
+$containersFile = "$env:SystemRoot\Setup\Scripts\ContainerList.txt"
+$dockerReady = $false
+
 # Download and install Docker Desktop
+:dockerSetup do {
+
 $dockerUri = [uri]::New("https://desktop.docker.com/win/main/amd64/Docker%20Desktop%20Installer.exe")
 $dockerInstaller = "$env:TEMP\DockerDesktopInstaller.exe"
 $dockerDownloaded = $false
@@ -1360,7 +1399,7 @@ for ($attempt = 1; $attempt -le 3; $attempt++) {
 
 if (-not $dockerDownloaded) {
     Write-ContainerLog "ERROR: Failed to download Docker Desktop after 3 attempts"
-    exit 1
+    break dockerSetup
 }
 
 try {
@@ -1371,52 +1410,57 @@ try {
 }
 catch {
     Write-ContainerLog "ERROR: Failed to install Docker Desktop: $_"
-    exit 1
+    break dockerSetup
 }
 
-# Wait for Docker Desktop executable
-$dockerTimeout = [datetime]::Now.AddMinutes(5)
-$dockerDesktopExe = "$env:ProgramFiles\Docker\Docker\Docker Desktop.exe"
+# Pre-configure Docker Desktop to skip onboarding dialog
+$dockerAppDataDir = "$env:APPDATA\Docker"
+if (-not (Test-Path $dockerAppDataDir)) {
+    New-Item -Path $dockerAppDataDir -ItemType Directory -Force | Out-Null
+}
+'{"onboardingComplete":true,"openAtLogin":false}' | Out-File "$dockerAppDataDir\settings-store.json" -Encoding UTF8
+Write-ContainerLog "Pre-configured Docker Desktop settings to skip onboarding"
 
+# Wait for Docker Desktop executable (no timeout - retries indefinitely)
 Write-ContainerLog "Waiting for Docker Desktop executable..."
+$exeWaitCount = 0
 while ($true) {
     if (Test-Path $dockerDesktopExe) {
         Write-ContainerLog "Starting Docker Desktop..."
         Start-Process -FilePath $dockerDesktopExe -WindowStyle Hidden
         break
     }
-    
-    if ([datetime]::Now -gt $dockerTimeout) {
-        Write-ContainerLog "ERROR: Docker Desktop executable not found after timeout"
-        exit 1
+
+    $exeWaitCount++
+    if ($exeWaitCount % 300 -eq 0) {
+        Write-ContainerLog "Still waiting for Docker Desktop executable... ($([math]::Round($exeWaitCount / 60)) minutes elapsed)"
     }
-    
+
     Start-Sleep -Seconds 1
 }
 
 # Wait for Docker Engine to be ready
-$engineTimeout = [datetime]::Now.AddMinutes(5)
-$dockerExe = "$env:ProgramFiles\Docker\Docker\resources\bin\docker.exe"
-
 Write-ContainerLog "Waiting for Docker Engine to be ready..."
+$engineWaitCount = 0
 while ($true) {
     try {
         $info = &amp; $dockerExe info 2&gt;&amp;1 | Out-String
-        
+
         if ($info -match "Name: docker-desktop") {
             Write-ContainerLog "Docker Engine is ready"
+            $dockerReady = $true
             break
         }
     }
     catch {
         # Continue waiting
     }
-    
-    if ([datetime]::Now -gt $engineTimeout) {
-        Write-ContainerLog "ERROR: Docker Engine failed to initialize"
-        exit 1
+
+    $engineWaitCount++
+    if ($engineWaitCount % 150 -eq 0) {
+        Write-ContainerLog "Still waiting for Docker Engine... ($([math]::Round($engineWaitCount * 2 / 60)) minutes elapsed)"
     }
-    
+
     Start-Sleep -Seconds 2
 }
 
@@ -1440,8 +1484,6 @@ if (Test-Path $dockerConfigFile) {
 Write-ContainerLog "Docker credential store configured"
 
 # Pull container images
-$containersFile = "$env:SystemRoot\Setup\Scripts\ContainerList.txt"
-
 if (Test-Path $containersFile) {
     Get-Content -Path $containersFile | ForEach-Object {
         $container = $_.Trim()
@@ -1463,6 +1505,7 @@ if (Test-Path $containersFile) {
         }
     }
 }
+} while ($false)
 
 # Cleanup desktop shortcuts
 Write-ContainerLog "Cleaning up..."
@@ -1494,7 +1537,7 @@ if (Test-Path $wslExe) {
     $kaliDeadline = [datetime]::Now.AddMinutes(10)
     Write-ContainerLog "Waiting for kali-linux distro to become available..."
     while ([datetime]::Now -lt $kaliDeadline) {
-        $kaliFound = (&amp; $wslExe -l -q 2&gt;&amp;1 | Where-Object { $_ -eq "kali-linux" }).Count -gt 0
+        $kaliFound = ((&amp; $wslExe -l -q 2&gt;&amp;1 | Out-String) -replace '\0','' -split '\r?\n' | Where-Object { $_.Trim() -eq "kali-linux" }).Count -gt 0
         if ($kaliFound) {
             # Distro registered, try to initialize it
             $cmdOutput = &amp; $wslExe -d kali-linux -u root -- echo "Kali initialized" 2&gt;&amp;1 | Out-String
@@ -1534,6 +1577,15 @@ if (Test-Path $wslExe) {
                 }
             }
         }
+
+        # Prevent interactive prompts during apt operations
+        Write-ContainerLog "Configuring non-interactive apt and needrestart..."
+        $cmdOutput = &amp; $wslExe -d kali-linux -u root -- bash -c "echo 'debconf debconf/frontend select Noninteractive' | debconf-set-selections" 2&gt;&amp;1 | Out-String
+        Write-CommandOutput -Output $cmdOutput -LogFile $logFile
+        $cmdOutput = &amp; $wslExe -d kali-linux -u root -- bash -c "mkdir -p /etc/needrestart/conf.d &amp;&amp; printf '`$nrconf{restart} = \x22a\x22;\n' > /etc/needrestart/conf.d/auto.conf" 2&gt;&amp;1 | Out-String
+        Write-CommandOutput -Output $cmdOutput -LogFile $logFile
+        $cmdOutput = &amp; $wslExe -d kali-linux -u root -- bash -c "echo 'DEBIAN_FRONTEND=noninteractive' >> /etc/environment" 2&gt;&amp;1 | Out-String
+        Write-CommandOutput -Output $cmdOutput -LogFile $logFile
 
         # Execute commands from KaliCommandsList.txt
         $kaliCommandsFile = "$env:SystemRoot\Setup\Scripts\KaliCommandsList.txt"
@@ -1597,6 +1649,9 @@ if (Test-Path $winConfigFile) {
         }
     }
 }
+
+# Refresh PATH to include applications installed in Stage 1
+$env:Path = [System.Environment]::GetEnvironmentVariable("Path", "Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path", "User")
 
 # Execute Windows commands
 $winCommandsFile = "$env:SystemRoot\Setup\Scripts\WindowsCommandsList.txt"
@@ -1884,7 +1939,7 @@ if (Test-Path $kaliCommandsFile) {
 }
 
 if (Test-Path $wslExe) {
-    $kaliInstalled = (&amp; $wslExe -l -q 2&gt;&amp;1 | Where-Object { $_ -eq "kali-linux" }).Count -gt 0
+    $kaliInstalled = ((&amp; $wslExe -l -q 2&gt;&amp;1 | Out-String) -replace '\0','' -split '\r?\n' | Where-Object { $_.Trim() -eq "kali-linux" }).Count -gt 0
     if ($kaliInstalled) {
         $readmeContent += "[+] kali-linux distro installed"
 
