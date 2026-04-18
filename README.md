@@ -164,11 +164,13 @@ $\color{Yellow}{\textsf{Note: When there is a Docker setep page on screen, click
 ---
 <h4>TODO</h4>
 
-- [ ] Make sure everything is put into the re-install section (failed to install, config, changes etc.)
-- [ ] Add GNS3 and images for Cisco switches and routers, Fortinets, Dells
-- [ ] Add VMWare download and checksum verification
-- [ ] License BurpSuite and Nessus
-- [ ] Add Nessus plugins
-- [ ] Figure out how to install Spotify via WinGet as it requires user context, not administrative context
-- [ ] Create better and consistent logs for everything
-- [ ] Check everything is installed Mimikatz, Rubeus, Seatbelt, Certipy compilation
+- Pip install isn't working - the venv are made but requirements are not installed
+- The above should also work with pyproject projects
+- Make sure everything is put into the re-install section (failed to install, config, changes etc.)
+- Add GNS3 and images for Cisco switches and routers, Fortinets, Dells
+- Add VMWare download and checksum verification
+- License BurpSuite and Nessus
+- Add Nessus plugins
+- Figure out how to install Spotify via WinGet as it requires user context, not administrative context
+- Create better and consistent logs for everything
+- Check everything is installed Mimikatz, Rubeus, Seatbelt, Certipy compilation
