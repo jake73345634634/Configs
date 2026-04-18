@@ -999,7 +999,8 @@ function Install-WingetApplications {
             "--disable-interactivity",
             "--accept-package-agreements",
             "--accept-source-agreements",
-            "--source", "winget"
+            "--source", "winget",
+            "--force"
         )
 
         if ($appArgs -and $appArgs -ne "") {
@@ -1081,9 +1082,24 @@ function Install-Repositories {
             continue
         }
 
-        # If the repo has a requirements.txt, create a venv and install dependencies
+        # Install Python project: prefer pyproject.toml/setup.py (installs project + deps + CLI entry points), fall back to requirements.txt
+        $pyprojectFile = Join-Path $destination "pyproject.toml"
+        $setupFile = Join-Path $destination "setup.py"
         $requirementsFile = Join-Path $destination "requirements.txt"
-        if ((Test-Path $requirementsFile) -and (Test-Path $pythonExe)) {
+        if (((Test-Path $pyprojectFile) -or (Test-Path $setupFile)) -and (Test-Path $pythonExe)) {
+            Write-Log "Installing Python project for: $repoUrl" -LogFile $LogFile
+            try {
+                $venvPath = Join-Path $destination ".venv"
+                $cmdOutput = &amp; $pythonExe -m venv $venvPath 2&gt;&amp;1 | Out-String
+                Write-CommandOutput -Output $cmdOutput -LogFile $LogFile
+                $pipExe = Join-Path $venvPath "Scripts\pip.exe"
+                $cmdOutput = &amp; $pipExe install $destination 2&gt;&amp;1 | Out-String
+                Write-CommandOutput -Output $cmdOutput -LogFile $LogFile
+                Write-Log "Python project installed for: $repoName" -LogFile $LogFile
+            } catch {
+                Write-Log "Failed to install Python project for $repoUrl : $_" -LogFile $LogFile -IsError
+            }
+        } elseif ((Test-Path $requirementsFile) -and (Test-Path $pythonExe)) {
             Write-Log "Installing Python dependencies for: $repoUrl" -LogFile $LogFile
             try {
                 $venvPath = Join-Path $destination ".venv"
@@ -1095,25 +1111,6 @@ function Install-Repositories {
                 Write-Log "Python dependencies installed for: $repoName" -LogFile $LogFile
             } catch {
                 Write-Log "Failed to install Python dependencies for $repoUrl : $_" -LogFile $LogFile -IsError
-            }
-        }
-
-        # If the repo has a pyproject.toml (and no requirements.txt), install the project
-        $pyprojectFile = Join-Path $destination "pyproject.toml"
-        if (-not (Test-Path $requirementsFile) -and (Test-Path $pyprojectFile) -and (Test-Path $pythonExe)) {
-            Write-Log "Installing Python project (pyproject.toml) for: $repoUrl" -LogFile $LogFile
-            try {
-                $venvPath = Join-Path $destination ".venv"
-                if (-not (Test-Path $venvPath)) {
-                    $cmdOutput = &amp; $pythonExe -m venv $venvPath 2&gt;&amp;1 | Out-String
-                    Write-CommandOutput -Output $cmdOutput -LogFile $LogFile
-                }
-                $pipExe = Join-Path $venvPath "Scripts\pip.exe"
-                $cmdOutput = &amp; $pipExe install $destination 2&gt;&amp;1 | Out-String
-                Write-CommandOutput -Output $cmdOutput -LogFile $LogFile
-                Write-Log "Python project (pyproject.toml) installed for: $repoName" -LogFile $LogFile
-            } catch {
-                Write-Log "Failed to install Python project (pyproject.toml) for $repoUrl : $_" -LogFile $LogFile -IsError
             }
         }
 
@@ -1786,11 +1783,11 @@ if ((Test-Path $wingetFile) -and (Test-Path $wingetExe)) {
                     $readmeContent += "[+] $appId"
                 } else {
                     $readmeContent += "[-] $appId"
-                    $failedCommands += "winget install --exact --id $appId --silent --disable-interactivity --accept-package-agreements --accept-source-agreements --source winget"
+                    $failedCommands += "winget install --exact --id $appId --silent --disable-interactivity --accept-package-agreements --accept-source-agreements --source winget --force"
                 }
             } catch {
                 $readmeContent += "[-] $appId"
-                $failedCommands += "winget install --exact --id $appId --silent --disable-interactivity --accept-package-agreements --accept-source-agreements --source winget"
+                $failedCommands += "winget install --exact --id $appId --silent --disable-interactivity --accept-package-agreements --accept-source-agreements --source winget --force"
             }
         }
     }
