@@ -908,6 +908,234 @@ echo Docker is ready.
 
     $cyberchefBat = $dockerStartBlock + "docker run -d -p 10001:80 ghcr.io/gchq/cyberchef`r`nif %ERRORLEVEL% NEQ 0 (echo. &amp; echo ERROR: Failed to start CyberChef container. &amp; pause)`r`n"
     $cyberchefBat | Out-File -FilePath "$env:USERPROFILE\Desktop\CyberChef.bat" -Encoding Ascii
+
+    $wslNetworkScript = @'
+# Self-elevate to admin
+if (-not ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
+    Start-Process powershell.exe -ArgumentList "-NoProfile -ExecutionPolicy Bypass -File `"$PSCommandPath`"" -Verb RunAs
+    exit
+}
+
+$WslConfigPath = "$env:USERPROFILE\.wslconfig"
+$SwitchName = "WSL-Bridge"
+$WslDistro = "kali-linux"
+$WslExe = "$env:SystemRoot\System32\wsl.exe"
+
+function Read-Selection {
+    param([string]$Prompt, [int]$Min, [int]$Max)
+    while ($true) {
+        Write-Host ""
+        $sel = Read-Host $Prompt
+        $num = 0
+        if ([int]::TryParse($sel, [ref]$num) -and $num -ge $Min -and $num -le $Max) { return $num }
+        Write-Host "Invalid selection. Enter a number between $Min and $Max." -ForegroundColor Red
+    }
+}
+
+function Get-CurrentMode {
+    if (Test-Path $WslConfigPath) {
+        $content = Get-Content $WslConfigPath -Raw
+        if ($content -match 'networkingMode\s*=\s*bridged') { return "Bridged" }
+    }
+    return "NAT"
+}
+
+function Set-BridgedMode {
+    # Check Hyper-V tools
+    if (-not (Get-Command Get-VMSwitch -ErrorAction SilentlyContinue)) {
+        Write-Host "ERROR: Hyper-V management tools are not available." -ForegroundColor Red
+        Write-Host "Run: Enable-WindowsOptionalFeature -Online -FeatureName Microsoft-Hyper-V-All -All" -ForegroundColor Yellow
+        Write-Host "Then reboot and try again."
+        Read-Host "Press Enter to exit"
+        exit 1
+    }
+
+    # Check Kali is installed
+    $distros = &amp; $WslExe -l -q 2&gt;&amp;1 | Out-String
+    if ($distros -notmatch $WslDistro) {
+        Write-Host "ERROR: $WslDistro is not installed." -ForegroundColor Red
+        Read-Host "Press Enter to exit"
+        exit 1
+    }
+
+    # NIC selection
+    Write-Host ""
+    Write-Host "Available network adapters:" -ForegroundColor Yellow
+    Write-Host ""
+
+    $adapters = @(Get-NetAdapter -Physical | Where-Object { $_.Status -eq "Up" })
+    if ($adapters.Count -eq 0) {
+        Write-Host "No active physical network adapters found." -ForegroundColor Red
+        Read-Host "Press Enter to exit"
+        exit 1
+    }
+
+    for ($i = 0; $i -lt $adapters.Count; $i++) {
+        $a = $adapters[$i]
+        Write-Host "  $($i + 1)) $($a.Name) - $($a.InterfaceDescription) [$($a.LinkSpeed)]"
+    }
+
+    $nicChoice = Read-Selection -Prompt "Select adapter" -Min 1 -Max $adapters.Count
+    $selectedNic = $adapters[$nicChoice - 1]
+
+    # Create Hyper-V switch
+    Write-Host ""
+    Write-Host "Configuring Hyper-V switch..." -ForegroundColor Yellow
+
+    $existingSwitch = Get-VMSwitch -Name $SwitchName -ErrorAction SilentlyContinue
+    if ($existingSwitch) {
+        Write-Host "Removing existing switch '$SwitchName'..."
+        Remove-VMSwitch -Name $SwitchName -Force
+        Start-Sleep -Seconds 3
+    }
+
+    Write-Host "Creating external switch '$SwitchName' on '$($selectedNic.Name)'..."
+    Write-Host "Note: Network may briefly disconnect." -ForegroundColor Yellow
+    New-VMSwitch -Name $SwitchName -NetAdapterName $selectedNic.Name -AllowManagementOS $true
+    Write-Host "Hyper-V switch created." -ForegroundColor Green
+
+    # IP mode selection
+    Write-Host ""
+    Write-Host "IP configuration for Kali WSL:" -ForegroundColor Yellow
+    Write-Host ""
+    Write-Host "  1) DHCP"
+    Write-Host "  2) Static IP"
+    $ipChoice = Read-Selection -Prompt "Select IP mode" -Min 1 -Max 2
+
+    $staticIp = $null
+    $subnetMask = $null
+    $gateway = $null
+    $dns1 = $null
+    $dns2 = $null
+
+    if ($ipChoice -eq 2) {
+        Write-Host ""
+        $staticIp = Read-Host "  IP Address (e.g. 192.168.1.100)"
+        $subnetMask = Read-Host "  Subnet Mask (e.g. 255.255.255.0)"
+        $gateway = Read-Host "  Gateway (e.g. 192.168.1.1)"
+        $dns1 = Read-Host "  DNS Server 1 (e.g. 192.168.1.1)"
+        $dns2 = Read-Host "  DNS Server 2 (e.g. 8.8.8.8)"
+    }
+
+    # Write .wslconfig
+    Write-Host ""
+    Write-Host "Writing .wslconfig..." -ForegroundColor Yellow
+    @"
+[wsl2]
+networkingMode=bridged
+vmSwitch=$SwitchName
+"@ | Out-File -FilePath $WslConfigPath -Encoding Ascii
+    Write-Host ".wslconfig written." -ForegroundColor Green
+
+    # Configure Kali wsl.conf
+    Write-Host "Configuring Kali wsl.conf..." -ForegroundColor Yellow
+    &amp; $WslExe -d $WslDistro -u root -- bash -c "printf '[boot]\nsystemd=true\n\n[network]\nhostname=kali\ngenerateResolvConf=false\n' &gt; /etc/wsl.conf"
+
+    # Write systemd network config
+    Write-Host "Configuring Kali network..." -ForegroundColor Yellow
+    &amp; $WslExe -d $WslDistro -u root -- bash -c "mkdir -p /etc/systemd/network"
+
+    if ($ipChoice -eq 1) {
+        &amp; $WslExe -d $WslDistro -u root -- bash -c "printf '[Match]\nName=eth0\n\n[Network]\nDHCP=yes\n' &gt; /etc/systemd/network/10-eth0.network"
+    } else {
+        # Convert subnet mask to CIDR
+        $cidr = 0
+        $subnetMask.Split('.') | ForEach-Object {
+            $byte = [convert]::ToInt32($_, 10)
+            while ($byte -gt 0) { $cidr += $byte -band 1; $byte = $byte -shr 1 }
+        }
+        &amp; $WslExe -d $WslDistro -u root -- bash -c "printf '[Match]\nName=eth0\n\n[Network]\nAddress=$staticIp/$cidr\nGateway=$gateway\nDNS=$dns1\nDNS=$dns2\n' &gt; /etc/systemd/network/10-eth0.network"
+    }
+
+    # Fix resolv.conf
+    Write-Host "Fixing resolv.conf..." -ForegroundColor Yellow
+    if ($ipChoice -eq 1) {
+        &amp; $WslExe -d $WslDistro -u root -- bash -c "rm -f /etc/resolv.conf &amp;&amp; ln -s /run/systemd/resolve/resolv.conf /etc/resolv.conf"
+    } else {
+        &amp; $WslExe -d $WslDistro -u root -- bash -c "rm -f /etc/resolv.conf &amp;&amp; printf 'nameserver %s\nnameserver %s\n' '$dns1' '$dns2' &gt; /etc/resolv.conf"
+    }
+
+    # Restart WSL
+    Write-Host ""
+    Write-Host "Restarting WSL..." -ForegroundColor Yellow
+    &amp; $WslExe --shutdown
+    Start-Sleep -Seconds 3
+    &amp; $WslExe -d $WslDistro -- echo "WSL restarted successfully"
+
+    Write-Host ""
+    Write-Host "Bridged mode configured. Kali is bridged to '$($selectedNic.Name)'." -ForegroundColor Green
+}
+
+function Set-NATMode {
+    # Remove .wslconfig
+    Write-Host ""
+    Write-Host "Removing bridged configuration..." -ForegroundColor Yellow
+    if (Test-Path $WslConfigPath) {
+        Remove-Item -Path $WslConfigPath -Force
+        Write-Host ".wslconfig removed." -ForegroundColor Green
+    }
+
+    # Remove Hyper-V switch
+    if (Get-Command Get-VMSwitch -ErrorAction SilentlyContinue) {
+        $existingSwitch = Get-VMSwitch -Name $SwitchName -ErrorAction SilentlyContinue
+        if ($existingSwitch) {
+            Write-Host "Removing Hyper-V switch '$SwitchName'..."
+            Remove-VMSwitch -Name $SwitchName -Force
+            Write-Host "Switch removed." -ForegroundColor Green
+        }
+    }
+
+    # Restore Kali defaults
+    Write-Host "Restoring Kali default networking..." -ForegroundColor Yellow
+    &amp; $WslExe -d $WslDistro -u root -- bash -c "rm -f /etc/systemd/network/10-eth0.network"
+    &amp; $WslExe -d $WslDistro -u root -- bash -c "printf '[boot]\nsystemd=true\n' &gt; /etc/wsl.conf"
+    &amp; $WslExe -d $WslDistro -u root -- bash -c "rm -f /etc/resolv.conf"
+
+    # Restart WSL
+    Write-Host ""
+    Write-Host "Restarting WSL..." -ForegroundColor Yellow
+    &amp; $WslExe --shutdown
+    Start-Sleep -Seconds 3
+    &amp; $WslExe -d $WslDistro -- echo "WSL restarted successfully"
+
+    Write-Host ""
+    Write-Host "NAT mode restored." -ForegroundColor Green
+}
+
+# Main
+$currentMode = Get-CurrentMode
+
+Write-Host "========================================"
+Write-Host "  WSL Network Mode Configuration"
+Write-Host "========================================"
+Write-Host ""
+Write-Host "Current mode: $currentMode" -ForegroundColor Cyan
+Write-Host ""
+
+if ($currentMode -eq "NAT") {
+    Write-Host "  1) Switch to Bridged mode"
+    Write-Host "  2) Exit"
+    $choice = Read-Selection -Prompt "Select option" -Min 1 -Max 2
+    if ($choice -eq 2) { exit }
+    Set-BridgedMode
+} else {
+    Write-Host "  1) Switch to NAT mode"
+    Write-Host "  2) Exit"
+    $choice = Read-Selection -Prompt "Select option" -Min 1 -Max 2
+    if ($choice -eq 2) { exit }
+    Set-NATMode
+}
+
+Write-Host ""
+Read-Host "Press Enter to exit"
+'@
+    $wslNetworkScript | Out-File -FilePath "$env:USERPROFILE\Desktop\ChangeWSLNetwork.ps1" -Encoding Ascii
+
+    $wslNetworkBat = @'
+@echo off
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%~dp0ChangeWSLNetwork.ps1"
+'@
+    $wslNetworkBat | Out-File -FilePath "$env:USERPROFILE\Desktop\ChangeWSLNetwork.bat" -Encoding Ascii
 }
 
 # ============================================================================
@@ -2235,6 +2463,9 @@ $scripts = @(
 	};
 	{
 		reg.exe add "HKU\.DEFAULT\Control Panel\Accessibility\StickyKeys" /v Flags /t REG_SZ /d 10 /f;
+	};
+	{
+		Enable-WindowsOptionalFeature -Online -FeatureName Microsoft-Hyper-V-All -All -NoRestart;
 	};
 );
 
