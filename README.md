@@ -19,10 +19,6 @@ $\color{Yellow}{\textsf{Note: Wi-Fi is not supported. You must use a wired conne
 
 $\color{Yellow}{\textsf{Note: It may look complete at points, but do close any windows until you see a README.md file on the desktop.}}$
 
-$\color{Yellow}{\textsf{Note: Give the mouse a little wiggle every now and then.}}$
-
-$\color{Yellow}{\textsf{Note: When there is a Docker setep page on screen, click the Skip button, then the script will continue.}}$
-
 <h4>Post-Installation</h4>
 
 - License Nessus
