@@ -1,4 +1,5 @@
 {
     "visual-studio-code.json": ["%APPDATA%/Code/User/settings.json"],
-    "greenshot.ini": ["%APPDATA%/Greenshot/Greenshot.ini"]
+    "greenshot.ini": ["%APPDATA%/Greenshot/Greenshot.ini"],
+    "burpsuite.json": ["%APPDATA%/BurpSuite/UserConfigPro.json"]
 }

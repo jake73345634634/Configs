@@ -139,10 +139,7 @@ $\color{Yellow}{\textsf{Note: It may look complete at points, but do close any w
 ---
 <h4>TODO</h4>
 
-- Pip install isn't working - the venv are made but requirements are not installed
-- The above should also work with pyproject projects
-- Make sure everything is put into the re-install section (failed to install, config, changes etc.)
-- Add GNS3 and images for Cisco switches and routers, Fortinets, Dells
+- Coercer doesn't work - some netifaces error
 - Add VMWare download and checksum verification
 - License BurpSuite and Nessus
 - Add Nessus plugins

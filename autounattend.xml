@@ -1642,6 +1642,9 @@ if (Test-Path $winConfigFile) {
                         $destDir = Split-Path -Parent $dest
                         if (-not (Test-Path $destDir)) { New-Item -Path $destDir -ItemType Directory -Force | Out-Null }
                         Copy-Item -Path $srcPath -Destination $dest -Force
+                        $content = Get-Content -Path $dest -Raw
+                        $expanded = [Environment]::ExpandEnvironmentVariables($content)
+                        if ($content -ne $expanded) { $expanded | Set-Content -Path $dest -NoNewline }
                         Write-ContainerLog "Copied $srcFile to $dest"
                     } catch {
                         Write-ContainerLog "ERROR: Failed to copy $srcFile to $dest : $_"
