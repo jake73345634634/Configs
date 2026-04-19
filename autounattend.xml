@@ -1020,11 +1020,7 @@ function Set-BridgedMode {
     # Write .wslconfig
     Write-Host ""
     Write-Host "Writing .wslconfig..." -ForegroundColor Yellow
-    @"
-[wsl2]
-networkingMode=bridged
-vmSwitch=$SwitchName
-"@ | Out-File -FilePath $WslConfigPath -Encoding Ascii
+    "[wsl2]`r`nnetworkingMode=bridged`r`nvmSwitch=$SwitchName" | Out-File -FilePath $WslConfigPath -Encoding Ascii
     Write-Host ".wslconfig written." -ForegroundColor Green
 
     # Configure Kali wsl.conf
@@ -1129,11 +1125,11 @@ if ($currentMode -eq "NAT") {
 Write-Host ""
 Read-Host "Press Enter to exit"
 '@
-    $wslNetworkScript | Out-File -FilePath "$env:USERPROFILE\Desktop\ChangeWSLNetwork.ps1" -Encoding Ascii
+    $wslNetworkScript | Out-File -FilePath "$env:SystemRoot\Setup\Scripts\ChangeWSLNetwork.ps1" -Encoding Ascii
 
     $wslNetworkBat = @'
 @echo off
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%~dp0ChangeWSLNetwork.ps1"
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%SystemRoot%\Setup\Scripts\ChangeWSLNetwork.ps1"
 '@
     $wslNetworkBat | Out-File -FilePath "$env:USERPROFILE\Desktop\ChangeWSLNetwork.bat" -Encoding Ascii
 }
@@ -2463,6 +2459,9 @@ $scripts = @(
 	};
 	{
 		reg.exe add "HKU\.DEFAULT\Control Panel\Accessibility\StickyKeys" /v Flags /t REG_SZ /d 10 /f;
+	};
+	{
+		Enable-WindowsOptionalFeature -Online -FeatureName Microsoft-Hyper-V-All -All -NoRestart;
 	};
 );
 
