@@ -7,5 +7,6 @@
     "terminal.integrated.cwd": "${env:USERPROFILE}/Desktop",
     "window.autoDetectColorScheme": false,
     "workbench.startupEditor": "none",
+    "workbench.welcomePage.walkthroughs.openOnInstall": false,
     "workbench.secondarySideBar.defaultVisibility": "hidden"
 }

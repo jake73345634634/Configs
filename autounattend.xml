@@ -1650,7 +1650,11 @@ if (Test-Path $winConfigFile) {
                         if (-not (Test-Path $destDir)) { New-Item -Path $destDir -ItemType Directory -Force | Out-Null }
                         Copy-Item -Path $srcPath -Destination $dest -Force
                         $content = Get-Content -Path $dest -Raw
-                        $expanded = [Environment]::ExpandEnvironmentVariables($content)
+                        if ($dest -match '\.json$') {
+                            $expanded = [regex]::Replace($content, '%([^%]+)%', { param($m) $v = [Environment]::GetEnvironmentVariable($m.Groups[1].Value); if ($v) { $v.Replace('\', '\\') } else { $m.Value } })
+                        } else {
+                            $expanded = [Environment]::ExpandEnvironmentVariables($content)
+                        }
                         if ($content -ne $expanded) { $expanded | Set-Content -Path $dest -NoNewline }
                         Write-ContainerLog "Copied $srcFile to $dest"
                     } catch {
