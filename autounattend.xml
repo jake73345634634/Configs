@@ -763,7 +763,6 @@ function New-DirectoryStructure {
     $toolsDir = New-Item -Path $Config.Directories.Desktop -Name "Tools" -ItemType Directory -Force
     $toolDirs = @{
         AllTools         = New-Item -Path $toolsDir -Name "_ALL_TOOLS" -ItemType Directory -Force
-        Configuration    = New-Item -Path $toolsDir -Name "Configuration" -ItemType Directory -Force
         Evasion          = New-Item -Path $toolsDir -Name "Evasion" -ItemType Directory -Force
         Windows          = New-Item -Path $toolsDir -Name "Windows" -ItemType Directory -Force
         Linux            = New-Item -Path $toolsDir -Name "Linux" -ItemType Directory -Force
@@ -1053,7 +1052,6 @@ function Install-Repositories {
     $reposList = @()
 
     $tagDirMap = @{
-        'Configuration'    = $ToolDirs.Configuration.FullName
         'Evasion'          = $ToolDirs.Evasion.FullName
         'Windows'          = $ToolDirs.Windows.FullName
         'Linux'            = $ToolDirs.Linux.FullName
@@ -1159,7 +1157,6 @@ function Install-Files {
     $filesList = @()
 
     $tagDirMap = @{
-        'Configuration'    = $ToolDirs.Configuration.FullName
         'Evasion'          = $ToolDirs.Evasion.FullName
         'Windows'          = $ToolDirs.Windows.FullName
         'Linux'            = $ToolDirs.Linux.FullName

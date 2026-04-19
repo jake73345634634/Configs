@@ -1,5 +1,5 @@
 [
-  { "url": "https://github.com/jake73345634634/Win11-Pentest", "name": "Win11-Pentest", "tags": ["Configuration"] },
+  { "url": "https://github.com/jake73345634634/Win11-Pentest", "name": "Win11-Pentest", "tags": ["Resources"] },
   { "url": "https://github.com/h4wkst3r/InvisibilityCloak", "name": "InvisibilityCloak", "tags": ["Evasion"] },
   { "url": "https://github.com/0xb11a1/yetAnotherObfuscator", "name": "yetAnotherObfuscator", "tags": ["Evasion"] },
   { "url": "https://github.com/EgeBalci/deoptimizer", "name": "deoptimizer", "tags": ["Evasion"] },

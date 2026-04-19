@@ -33,133 +33,112 @@ $\color{Yellow}{\textsf{Note: When there is a Docker setep page on screen, click
 ---
 <h4>Tools</h4>
 
-<h5>Configuration</h5>
-
-- Repository: Win11-Pentest (this repository)
-
-<h5>Evasion</h5>
-
-- Module: Invoke-Argfuscator
-- Repository: InvisibilityCloak
-- Repository: yetAnotherObfuscator
-- Repository: deoptimizer
-
-<h5>Reversing</h5>
-
-- WinGet: dnSpy
-- WinGet: ILSpy
-- WinGet: DIE
-- WinGet: JD-GUI
-
-<h5>Windows</h5>
-
-- File: Chisel
-- File: WinPEAS
-- Repository: mimikatz
-- Repository: Rubeus
-- Repository: Seatbelt
-- Repository: precompiled-binaries
-- Repository: SharpCollection
-- Repository: Titanis
-- WinGet: SysInternals
-
-<h5>Linux</h5>
-
-- File: Chisel
-- File: LinPEAS
-
-<h5>Kali WSL</h5>
-
-- APT: Impacket
-- APT: Responder
-- APT: NetExec
-
-<h5>Active Directory</h5>
-
-- Capability: RSAT ActiveDirectory
-- Capability: RSAT DNS
-- Docker: BloodHound
-- Repository: SharpHound
-- Repository: RustHound-CE
-- Repository: PlumHound
-- Repository: BlueHound
-- Repository: Certipy
-- Repository: bloodyAD
-- Repository: ScriptSentry
-- Repository: GPOZaurr
-- Repository: precompiled-binaries
-- Repository: SharpCollection
-- Repository: Coercer
-- Repository: Titanis
-
-<h5>Network</h5>
-
-- Docker: Nuclei
-- Docker: BBOT
-- WinGet: Nessus
-- WinGet: Nmap
-- WinGet: WireShark
-
-<h5>Kubernetes</h5>
-
-- Repository: Kubernetes-RBAC-Audit
-
-<h5>Azure</h5>
-
-- Docker: BloodHound
-- Repository: AzureHound
-- Module: AADInternals
-- Repository: precompiled-binaries
-- WinGet: Azure CLI
-- WinGet: Storage Explorer
-
-<h5>AWS</h5>
-
-- WinGet: AWS CLI
-
-<h5>Web Application</h5>
-
-- WinGet: Burp Suite Professional
-- WinGet: Insomnia
-
-<h5>Database</h5>
-
-- Docker: Postgres:16
-- Docker: Neo4J:4.4
-- WinGet: Firebird:5
-- WinGet: DBeaver
-- WinGet: SQL Server Management Studio
-- WinGet: MySQL Workbench
-- WinGet: SQLite Browser
-
-<h5>Resources</h5>
-
-- Docker: CyberChef
-- File: Jython
-- File: Hashcat
-- Repository: nuclei-templates
-- Repository: SecLists
-- Repository: DefaultCreds-cheat-sheet
-- Repository: username-anarchy
-- Repository: rockyou.txt
-- WinGet: Visual Studio 2022
-- WinGet: Visual Studio Code
-- WinGet: Office
-- WinGet: WireGuard
-- WinGet: OpenVPN
-- WinGet: 7zip
-- WinGet: Git
-- WinGet: Python:3.13
-- WinGet: NodeJS
-- WinGet: Go
-- WinGet: JQ
-- WinGet: Greenshot
-- WinGet: mRemoteNG
-- WinGet: Make
-- WinGet: VirtualBox
-- WinGet: Spotify
-- WinGet: OpenJDK:14
-- WinGet: KeePass
+| Category | Tool | Method |
+|---|---|---|
+| Active Directory | BloodHound | Docker |
+| Active Directory | bloodyAD | Repository |
+| Active Directory | Certipy | Repository |
+| Active Directory | Coercer | Repository |
+| Active Directory | GPOZaurr | Repository |
+| Active Directory | PlumHound | Repository |
+| Active Directory | BlueHound | Repository |
+| Active Directory | precompiled-binaries | Repository |
+| Active Directory | RSAT ActiveDirectory | Capability |
+| Active Directory | RSAT DNS | Capability |
+| Active Directory | RustHound-CE | Repository |
+| Active Directory | ScriptSentry | Repository |
+| Active Directory | SharpCollection | Repository |
+| Active Directory | SharpHound | Repository |
+| Active Directory | Titanis | Repository |
+| Active Directory | grADus | Repository |
+| AWS | AWS CLI | WinGet |
+| Azure | AADInternals | Module |
+| Azure | Azure CLI | WinGet |
+| Azure | AzureHound | Repository |
+| Azure | BloodHound | Docker |
+| Azure | precompiled-binaries | Repository |
+| Azure | Storage Explorer | WinGet |
+| Database | DBeaver | WinGet |
+| Database | Firebird:5 | WinGet |
+| Database | MySQL Workbench | WinGet |
+| Database | Neo4J:4.4 | Docker |
+| Database | Postgres:16 | Docker |
+| Database | SQL Server Management Studio | WinGet |
+| Database | SQLite Browser | WinGet |
+| Evasion | deoptimizer | Repository |
+| Evasion | InvisibilityCloak | Repository |
+| Evasion | Invoke-Argfuscator | Module |
+| Evasion | yetAnotherObfuscator | Repository |
+| Kali WSL | Impacket | APT |
+| Kali WSL | NetExec | APT |
+| Kali WSL | Responder | APT |
+| Firewall | vigiLANs | Repository |
+| Kubernetes | Kubernetes-RBAC-Audit | Repository |
+| Linux | Chisel | File |
+| Linux | LinPEAS | File |
+| Network | BBOT | Docker |
+| Network | Nessus | WinGet |
+| Network | Nmap | WinGet |
+| Network | Nuclei | Docker |
+| Network | WireShark | WinGet |
+| Network | OpenSSH Server | Capability |
+| Resources | CyberChef | Docker |
+| Resources | DefaultCreds-cheat-sheet | Repository |
+| Resources | Hashcat | File |
+| Resources | Jython | File |
+| Resources | nuclei-templates | Repository |
+| Resources | rockyou.txt | Repository |
+| Resources | SecLists | Repository |
+| Resources | username-anarchy | Repository |
+| Resources | Win11-Pentest | Repository |
+| Reversing | DIE | WinGet |
+| Reversing | dnSpy | WinGet |
+| Reversing | ILSpy | WinGet |
+| Reversing | JD-GUI | WinGet |
+| Web Application | Burp Suite Professional | WinGet |
+| Web Application | Insomnia | WinGet |
+| Web Application | auth-analyser | File |
+| Web Application | backslash-powered-scanner | File |
+| Web Application | error-message-checks | File |
+| Web Application | param-miner | File |
+| Web Application | js-miner | File |
+| Web Application | retire-js | File |
+| Web Application | java-deserialisation-scanner | File |
+| Web Application | json-web-tokens | File |
+| Web Application | inql-graphql-scanner | File |
+| Web Application | 403-bypasser | File |
+| Web Application | 429-bypasser | File |
+| Web Application | active-scan-plus-plus | File |
+| Web Application | additional-csrf-checks | File |
+| Web Application | additional-scanner-checks | File |
+| Windows | Chisel | File |
+| Windows | mimikatz | Repository |
+| Windows | precompiled-binaries | Repository |
+| Windows | Rubeus | Repository |
+| Windows | Seatbelt | Repository |
+| Windows | SharpCollection | Repository |
+| Windows | SysInternals | WinGet |
+| Windows | Titanis | Repository |
+| Windows | WinPEAS | File |
+| General | 7zip | WinGet |
+| General | Git | WinGet |
+| General | Go | WinGet |
+| General | Greenshot | WinGet |
+| General | JQ | WinGet |
+| General | KeePass | WinGet |
+| General | Make | WinGet |
+| General | mRemoteNG | WinGet |
+| General | NodeJS | WinGet |
+| General | Office | WinGet |
+| General | OpenJDK:14 | WinGet |
+| General | OpenVPN | WinGet |
+| General | Python 3.7-3.13 | WinGet |
+| General | Spotify | WinGet |
+| General | VirtualBox | WinGet |
+| General | Visual Studio 2022 | WinGet |
+| General | Visual Studio Code | WinGet |
+| General | WireGuard | WinGet |
+| General | YubiKey Manager | WinGet |
 
 ---
 <h4>TODO</h4>
