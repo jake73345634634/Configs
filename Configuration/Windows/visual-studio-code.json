@@ -5,5 +5,7 @@
     "chat.disableAIFeatures": true,
     "terminal.integrated.stickyScroll.enabled": false,
     "terminal.integrated.cwd": "${env:USERPROFILE}/Desktop",
-    "window.autoDetectColorScheme": false
+    "window.autoDetectColorScheme": false,
+    "workbench.startupEditor": "none",
+    "workbench.secondarySideBar.defaultVisibility": "hidden"
 }

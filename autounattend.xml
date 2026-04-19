@@ -1977,6 +1977,8 @@ if ($failedCommands.Count -gt 0) {
     $readmeContent += "Reinstall Failed Items"
     $readmeContent += "=" * 80
     $readmeContent += ""
+    $readmeContent += "Note: Configuration for any failed items will likely not have been set, or partially set."
+    $readmeContent += ""
     foreach ($cmd in $failedCommands) {
         $readmeContent += $cmd
     }
