@@ -1901,6 +1901,81 @@ if (Test-Path $winConfigFile) {
     }
 }
 
+# Install Burp Suite extensions from .bapp files
+$resourcesDir = "$env:USERPROFILE\Desktop\Tools\Resources"
+$bappsDir = "$env:APPDATA\BurpSuite\bapps"
+$burpConfigPath = "$env:APPDATA\BurpSuite\UserConfigPro.json"
+$bappFiles = @(Get-ChildItem -Path $resourcesDir -Filter "*.bapp" -ErrorAction SilentlyContinue)
+if ($bappFiles.Count -gt 0 -and (Test-Path $burpConfigPath)) {
+    Write-ContainerLog "=== Burp Suite Extension Installation ==="
+    if (-not (Test-Path $bappsDir)) { New-Item -Path $bappsDir -ItemType Directory -Force | Out-Null }
+    $extensions = @()
+    foreach ($bappFile in $bappFiles) {
+        try {
+            # Extract .bapp (ZIP) to temp to read manifest
+            $tempDir = Join-Path $env:TEMP ("bapp_" + [System.IO.Path]::GetFileNameWithoutExtension($bappFile.Name))
+            if (Test-Path $tempDir) { Remove-Item -Path $tempDir -Recurse -Force }
+            Expand-Archive -Path $bappFile.FullName -DestinationPath $tempDir -Force
+
+            # Read manifest (BappManifest.bmf is a properties file)
+            $manifestPath = Join-Path $tempDir "BappManifest.bmf"
+            if (-not (Test-Path $manifestPath)) {
+                Write-ContainerLog "WARNING: No manifest in $($bappFile.Name), skipping"
+                continue
+            }
+            $manifest = @{}
+            Get-Content $manifestPath | ForEach-Object {
+                if ($_ -match '^([^:]+):\s*(.*)$') { $manifest[$Matches[1].Trim()] = $Matches[2].Trim() }
+            }
+
+            $uuid = $manifest["Uuid"]
+            if (-not $uuid) {
+                Write-ContainerLog "WARNING: No UUID in manifest for $($bappFile.Name), skipping"
+                continue
+            }
+
+            # Move extracted content to bapps directory
+            $destBappDir = Join-Path $bappsDir $uuid
+            if (Test-Path $destBappDir) { Remove-Item -Path $destBappDir -Recurse -Force }
+            Move-Item -Path $tempDir -Destination $destBappDir -Force
+
+            # Determine extension type (1=java, 2=python, 3=ruby)
+            $extTypeMap = @{ "1" = "java"; "2" = "python"; "3" = "ruby" }
+            $extType = "java"
+            if ($manifest["ExtensionType"] -and $extTypeMap.ContainsKey($manifest["ExtensionType"])) {
+                $extType = $extTypeMap[$manifest["ExtensionType"]]
+            }
+
+            # Build extension entry
+            $entryPoint = $manifest["EntryPoint"] -replace '/', '\'
+            $extEntry = [ordered]@{
+                auto_reload = $false
+                bapp_serial_version = [int]($manifest["SerialVersion"])
+                bapp_uuid = $uuid
+                errors = "ui"
+                extension_file = "bapps\$uuid\$entryPoint"
+                extension_type = $extType
+                loaded = $true
+                name = $manifest["Name"]
+                output = "ui"
+                use_ai = $false
+            }
+            $extensions += $extEntry
+            Write-ContainerLog "Configured extension: $($manifest["Name"]) ($uuid)"
+        } catch {
+            Write-ContainerLog "ERROR: Failed to process $($bappFile.Name): $_"
+        }
+    }
+
+    # Update UserConfigPro.json with extensions array
+    if ($extensions.Count -gt 0) {
+        $burpConfig = Get-Content -Path $burpConfigPath -Raw | ConvertFrom-Json
+        $burpConfig.user_options.extender.extensions = $extensions
+        $burpConfig | ConvertTo-Json -Depth 10 | Set-Content -Path $burpConfigPath -Encoding UTF8
+        Write-ContainerLog "Updated UserConfigPro.json with $($extensions.Count) extension(s)"
+    }
+}
+
 # Refresh PATH to include applications installed in Stage 1
 $env:Path = [System.Environment]::GetEnvironmentVariable("Path", "Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path", "User")
 
