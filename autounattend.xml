@@ -1915,7 +1915,8 @@ if ($bappFiles.Count -gt 0 -and (Test-Path $burpConfigPath)) {
             # Extract .bapp (ZIP) to temp to read manifest
             $tempDir = Join-Path $env:TEMP ("bapp_" + [System.IO.Path]::GetFileNameWithoutExtension($bappFile.Name))
             if (Test-Path $tempDir) { Remove-Item -Path $tempDir -Recurse -Force }
-            Expand-Archive -Path $bappFile.FullName -DestinationPath $tempDir -Force
+            Add-Type -AssemblyName System.IO.Compression.FileSystem
+            [System.IO.Compression.ZipFile]::ExtractToDirectory($bappFile.FullName, $tempDir)
 
             # Read manifest (BappManifest.bmf is a properties file)
             $manifestPath = Join-Path $tempDir "BappManifest.bmf"
