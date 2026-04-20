@@ -1063,8 +1063,13 @@ function Set-BridgedMode {
 }
 
 function Set-NATMode {
-    # Remove .wslconfig
+    # Shutdown WSL first (required before removing the switch)
     Write-Host ""
+    Write-Host "Shutting down WSL..." -ForegroundColor Yellow
+    &amp; $WslExe --shutdown
+    Start-Sleep -Seconds 3
+
+    # Remove .wslconfig
     Write-Host "Removing bridged configuration..." -ForegroundColor Yellow
     if (Test-Path $WslConfigPath) {
         Remove-Item -Path $WslConfigPath -Force
@@ -1517,6 +1522,10 @@ function Install-WSL {
     
     $cmdOutput = wsl --install -d kali-linux 2&gt;&amp;1 | Out-String
     Write-CommandOutput -Output $cmdOutput -LogFile $LogFile
+    if ($LASTEXITCODE -eq 0) {
+        wsl --set-default kali-linux
+        Write-Log "Set kali-linux as default WSL distribution" -LogFile $LogFile
+    }
 }
 
 function Invoke-WindowsActivation {
