@@ -20,5 +20,6 @@
   { "url": "https://portswigger.net/bappstore/bapps/download/19c6fa5cca1f4589b70cf19a9f71e7b8/1", "name": "429-bypasser.bapp", "tags": ["Resources"] },
   { "url": "https://portswigger.net/bappstore/bapps/download/3123d5b5f25c4128894d97ea1acc4976/50", "name": "active-scan-plus-plus.bapp", "tags": ["Resources"] },
   { "url": "https://portswigger.net/bappstore/bapps/download/2d12070c90cb4a0f91cde0b8927fd606/1", "name": "additional-csrf-checks.bapp", "tags": ["Resources"] },
-  { "url": "https://portswigger.net/bappstore/bapps/download/a158fd3fc9394253be3aa0bc4c181d1f/6", "name": "additional-scanner-checks.bapp", "tags": ["Resources"] }
+  { "url": "https://portswigger.net/bappstore/bapps/download/a158fd3fc9394253be3aa0bc4c181d1f/6", "name": "additional-scanner-checks.bapp", "tags": ["Resources"] },
+  { "url": "https://portswigger.net/bappstore/bapps/download/aaaa60ef945341e8a450217a54a11646/51", "name": "http-request-smuggler.bapp", "tags": ["Resources"]}
 ]

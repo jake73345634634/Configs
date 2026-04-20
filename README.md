@@ -24,7 +24,6 @@ $\color{Yellow}{\textsf{Note: It may look complete at points, but do close any w
 - License Nessus
 - Add Nessus plugins
 - License BurpSuite
-- Bridge WSL (use `ChangeWSLNetwork.ps1` on Desktop)
 
 ---
 <h4>Tools</h4>
