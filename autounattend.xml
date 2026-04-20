@@ -951,7 +951,7 @@ function Set-BridgedMode {
     }
 
     # Check Kali is installed
-    $distros = &amp; $WslExe -l -q 2&gt;&amp;1 | Out-String
+    $distros = (&amp; $WslExe -l -q 2&gt;&amp;1 | Out-String) -replace "`0", ""
     if ($distros -notmatch $WslDistro) {
         Write-Host "ERROR: $WslDistro is not installed." -ForegroundColor Red
         Read-Host "Press Enter to exit"
