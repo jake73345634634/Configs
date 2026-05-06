@@ -27,5 +27,6 @@
   { "url": "https://github.com/trustedsec/Titanis", "name": "Titanis", "tags": ["Windows", "Active_Directory"] },
   { "url": "https://github.com/jake73345634634/vigiLANs", "name": "vigiLANs", "tags": ["Firewall"] },
   { "url": "https://github.com/jake73345634634/grADus", "name": "grADus", "tags": ["Active_Directory"] },
-  { "url": "https://github.com/synacktiv/OUned", "name": "OUned", "tags": ["Active_Directory"] }
+  { "url": "https://github.com/synacktiv/OUned", "name": "OUned", "tags": ["Active_Directory"] },
+  { "url": "https://github.com/slaptat/copyFail30", "name": "copyFail30", "tags": ["Linux"] }
 ]
