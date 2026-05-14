@@ -1422,8 +1422,8 @@ function Install-Files {
             continue
         }
 
-        # Extract archives (.zip / .gz / .7z) and remove the original
-        if ($fileName -match '\.(zip|gz|7z)$') {
+        # Extract archives (.zip / .tar.gz / .gz / .7z) and remove the original
+        if ($fileName -match '\.(zip|tar\.gz|gz|7z)$') {
             try {
                 if ($fileName -match '\.zip$') {
                     $extractDir = Join-Path $allToolsDir ($fileName -replace '\.zip$', '')
@@ -1448,6 +1448,30 @@ function Install-Files {
                     } else {
                         $destination = $extractDir
                         $fileName = $fileName -replace '\.zip$', ''
+                    }
+                } elseif ($fileName -match '\.tar\.gz$') {
+                    $extractDir = Join-Path $allToolsDir ($fileName -replace '\.tar\.gz$', '')
+                    New-Item -ItemType Directory -Path $extractDir -Force | Out-Null
+                    tar -xzf $destination -C $extractDir
+                    Remove-Item -LiteralPath $destination -Force
+                    # Flatten single-item archives
+                    $items = Get-ChildItem -Path $extractDir -Force
+                    if ($items.Count -eq 1) {
+                        $singleItem = $items[0]
+                        $flatPath = Join-Path $allToolsDir $singleItem.Name
+                        if ($singleItem.PSIsContainer -and $flatPath -eq $extractDir) {
+                            Get-ChildItem -Path $singleItem.FullName -Force | Move-Item -Destination $extractDir -Force
+                            Remove-Item -Path $singleItem.FullName -Recurse -Force
+                            $destination = $extractDir
+                        } else {
+                            Move-Item -Path $singleItem.FullName -Destination $flatPath -Force
+                            Remove-Item -Path $extractDir -Recurse -Force
+                            $destination = $flatPath
+                        }
+                        $fileName = $singleItem.Name
+                    } else {
+                        $destination = $extractDir
+                        $fileName = $fileName -replace '\.tar\.gz$', ''
                     }
                 } elseif ($fileName -match '\.gz$') {
                     Add-Type -AssemblyName System.IO.Compression -ErrorAction SilentlyContinue
@@ -2183,6 +2207,8 @@ if (Test-Path $filesFile) {
                         $failedCommands += "Expand-Archive -Path `"$downloadDest`" -DestinationPath `"$filePath`" -Force; Remove-Item -LiteralPath `"$downloadDest`" -Force"
                     } elseif ($originalName -match '\.7z$') {
                         $failedCommands += "&amp; `"`$env:ProgramFiles\7-Zip\7z.exe`" x `"$downloadDest`" `"-o$filePath`" -y; Remove-Item -LiteralPath `"$downloadDest`" -Force"
+                    } elseif ($originalName -match '\.tar\.gz$') {
+                        $failedCommands += "New-Item -ItemType Directory -Path `"$filePath`" -Force | Out-Null; tar -xzf `"$downloadDest`" -C `"$filePath`"; Remove-Item -LiteralPath `"$downloadDest`" -Force"
                     } elseif ($originalName -match '\.gz$') {
                         $failedCommands += "Add-Type -AssemblyName System.IO.Compression; `$gzIn = [System.IO.File]::OpenRead('$downloadDest'); `$gzStream = [System.IO.Compression.GZipStream]::new(`$gzIn, [System.IO.Compression.CompressionMode]::Decompress); `$fsOut = [System.IO.File]::Create('$filePath'); `$gzStream.CopyTo(`$fsOut); `$fsOut.Close(); `$gzStream.Close(); `$gzIn.Close(); Remove-Item -LiteralPath '$downloadDest' -Force"
                     }

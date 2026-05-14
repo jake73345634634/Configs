@@ -3,5 +3,6 @@
   "sudo apt install python3-impacket -y && sudo apt install impacket-scripts -y",
   "sudo apt install netexec -y",
   "sudo apt install responder -y",
-  "sudo apt install evil-winrm -y"
+  "sudo apt install evil-winrm -y",
+  "sudo apt install proxychains4 -y"
 ]

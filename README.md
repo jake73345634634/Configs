@@ -35,17 +35,23 @@ $\color{Yellow}{\textsf{Note: It may look complete at points, but do close any w
 | Active Directory | Certipy | Repository |
 | Active Directory | Coercer | Repository |
 | Active Directory | GPOZaurr | Repository |
+| Active Directory | grADus | Repository |
+| Active Directory | kerbrute | File |
+| Active Directory | ldapdomaindump | Repository |
+| Active Directory | mimikatz | Repository |
+| Active Directory | OUned | Repository |
 | Active Directory | PlumHound | Repository |
 | Active Directory | BlueHound | Repository |
 | Active Directory | precompiled-binaries | Repository |
+| Active Directory | pywhisker | Repository |
 | Active Directory | RSAT ActiveDirectory | Capability |
 | Active Directory | RSAT DNS | Capability |
+| Active Directory | Rubeus | Repository |
 | Active Directory | RustHound-CE | Repository |
 | Active Directory | ScriptSentry | Repository |
 | Active Directory | SharpCollection | Repository |
 | Active Directory | SharpHound | Repository |
 | Active Directory | Titanis | Repository |
-| Active Directory | grADus | Repository |
 | AWS | AWS CLI | WinGet |
 | Azure | AADInternals | Module |
 | Azure | Azure CLI | WinGet |
@@ -64,19 +70,28 @@ $\color{Yellow}{\textsf{Note: It may look complete at points, but do close any w
 | Evasion | InvisibilityCloak | Repository |
 | Evasion | Invoke-Argfuscator | Module |
 | Evasion | yetAnotherObfuscator | Repository |
+| Kali WSL | Evil-WinRM | APT |
 | Kali WSL | Impacket | APT |
 | Kali WSL | NetExec | APT |
+| Kali WSL | proxychains4 | APT |
 | Kali WSL | Responder | APT |
 | Firewall | vigiLANs | Repository |
 | Kubernetes | Kubernetes-RBAC-Audit | Repository |
 | Linux | Chisel | File |
+| Linux | copyFail30 | Repository |
+| Linux | Ligolo-ng (agent) | File |
 | Linux | LinPEAS | File |
+| Linux | pspy | File |
 | Network | BBOT | Docker |
+| Network | ffuf | File |
+| Network | Ligolo-ng (proxy) | File |
 | Network | Nessus | WinGet |
 | Network | Nmap | WinGet |
 | Network | Nuclei | Docker |
-| Network | WireShark | WinGet |
 | Network | OpenSSH Server | Capability |
+| Network | sqlmap | Repository |
+| Network | sslscan | File |
+| Network | WireShark | WinGet |
 | Resources | CyberChef | Docker |
 | Resources | DefaultCreds-cheat-sheet | Repository |
 | Resources | Hashcat | File |
@@ -101,21 +116,27 @@ $\color{Yellow}{\textsf{Note: It may look complete at points, but do close any w
 | Web Application | java-deserialisation-scanner | File |
 | Web Application | json-web-tokens | File |
 | Web Application | inql-graphql-scanner | File |
+| Web Application | http-request-smuggler | File |
 | Web Application | 403-bypasser | File |
 | Web Application | 429-bypasser | File |
 | Web Application | active-scan-plus-plus | File |
 | Web Application | additional-csrf-checks | File |
 | Web Application | additional-scanner-checks | File |
 | Windows | Chisel | File |
+| Windows | LaZagne | Repository |
+| Windows | Ligolo-ng (agent) | File |
 | Windows | mimikatz | Repository |
 | Windows | precompiled-binaries | Repository |
 | Windows | Rubeus | Repository |
 | Windows | Seatbelt | Repository |
 | Windows | SharpCollection | Repository |
+| Windows | SharpHound | Repository |
 | Windows | SysInternals | WinGet |
 | Windows | Titanis | Repository |
+| Windows | Whisker | Repository |
 | Windows | WinPEAS | File |
 | General | 7zip | WinGet |
+| General | Firefox | WinGet |
 | General | Git | WinGet |
 | General | Go | WinGet |
 | General | Greenshot | WinGet |

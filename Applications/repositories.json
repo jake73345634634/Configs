@@ -3,11 +3,11 @@
   { "url": "https://github.com/h4wkst3r/InvisibilityCloak", "name": "InvisibilityCloak", "tags": ["Evasion"] },
   { "url": "https://github.com/0xb11a1/yetAnotherObfuscator", "name": "yetAnotherObfuscator", "tags": ["Evasion"] },
   { "url": "https://github.com/EgeBalci/deoptimizer", "name": "deoptimizer", "tags": ["Evasion"] },
-  { "url": "https://github.com/gentilkiwi/mimikatz", "name": "mimikatz", "tags": ["Windows"] },
-  { "url": "https://github.com/GhostPack/Rubeus", "name": "Rubeus", "tags": ["Windows"] },
+  { "url": "https://github.com/gentilkiwi/mimikatz", "name": "mimikatz", "tags": ["Windows", "Active_Directory"] },
+  { "url": "https://github.com/GhostPack/Rubeus", "name": "Rubeus", "tags": ["Windows", "Active_Directory"] },
   { "url": "https://github.com/GhostPack/Seatbelt", "name": "Seatbelt", "tags": ["Windows"] },
   { "url": "https://github.com/SpecterOps/AzureHound", "name": "AzureHound", "tags": ["Azure"] },
-  { "url": "https://github.com/SpecterOps/SharpHound", "name": "SharpHound", "tags": ["Active_Directory"] },
+  { "url": "https://github.com/SpecterOps/SharpHound", "name": "SharpHound", "tags": ["Windows", "Active_Directory"] },
   { "url": "https://github.com/PlumHound/PlumHound", "name": "PlumHound", "tags": ["Active_Directory"] },
   { "url": "https://github.com/zeronetworks/BlueHound", "name": "BlueHound", "tags": ["Active_Directory"] },
   { "url": "https://github.com/g0h4n/RustHound-CE", "name": "RustHound-CE", "tags": ["Active_Directory"] },
@@ -28,5 +28,10 @@
   { "url": "https://github.com/jake73345634634/vigiLANs", "name": "vigiLANs", "tags": ["Firewall"] },
   { "url": "https://github.com/jake73345634634/grADus", "name": "grADus", "tags": ["Active_Directory"] },
   { "url": "https://github.com/synacktiv/OUned", "name": "OUned", "tags": ["Active_Directory"] },
-  { "url": "https://github.com/slaptat/copyFail30", "name": "copyFail30", "tags": ["Linux"] }
+  { "url": "https://github.com/slaptat/copyFail30", "name": "copyFail30", "tags": ["Linux"] },
+  { "url": "https://github.com/dirkjanm/ldapdomaindump", "name": "ldapdomaindump", "tags": ["Active_Directory"] },
+  { "url": "https://github.com/eladshamir/Whisker", "name": "Whisker", "tags": ["Windows", "Active_Directory"] },
+  { "url": "https://github.com/ShutdownRepo/pywhisker", "name": "pywhisker", "tags": ["Active_Directory"] },
+  { "url": "https://github.com/sqlmapproject/sqlmap", "name": "sqlmap", "tags": ["Network"] },
+  { "url": "https://github.com/AlessandroZ/LaZagne", "name": "LaZagne", "tags": ["Windows"] }
 ]

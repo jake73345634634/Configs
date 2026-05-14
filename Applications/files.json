@@ -21,5 +21,18 @@
   { "url": "https://portswigger.net/bappstore/bapps/download/3123d5b5f25c4128894d97ea1acc4976/50", "name": "active-scan-plus-plus.bapp", "tags": ["Resources"] },
   { "url": "https://portswigger.net/bappstore/bapps/download/2d12070c90cb4a0f91cde0b8927fd606/1", "name": "additional-csrf-checks.bapp", "tags": ["Resources"] },
   { "url": "https://portswigger.net/bappstore/bapps/download/a158fd3fc9394253be3aa0bc4c181d1f/6", "name": "additional-scanner-checks.bapp", "tags": ["Resources"] },
-  { "url": "https://portswigger.net/bappstore/bapps/download/aaaa60ef945341e8a450217a54a11646/51", "name": "http-request-smuggler.bapp", "tags": ["Resources"]}
+  { "url": "https://portswigger.net/bappstore/bapps/download/aaaa60ef945341e8a450217a54a11646/51", "name": "http-request-smuggler.bapp", "tags": ["Resources"]},
+  { "url": "https://github.com/rbsec/sslscan/releases/download/2.2.2/sslscan-2.2.2.zip", "name": "sslscan-2.2.2.zip", "tags": ["Network"]},
+  { "url": "https://github.com/ropnop/kerbrute/releases/download/v1.0.3/kerbrute_linux_amd64", "name": "kerbrute_linux_amd64", "tags": ["Active_Directory"]},
+  { "url": "https://github.com/ropnop/kerbrute/releases/download/v1.0.3/kerbrute_windows_amd64.exe", "name": "kerbrute_windows_amd64.exe", "tags": ["Active_Directory"]},
+  { "url": "https://github.com/nicocha30/ligolo-ng/releases/download/v0.8.3/ligolo-ng_agent_0.8.3_windows_amd64.zip", "name": "ligolo-ng_agent_0.8.3_windows_amd64.zip", "tags": ["Windows"]},
+  { "url": "https://github.com/nicocha30/ligolo-ng/releases/download/v0.8.3/ligolo-ng_proxy_0.8.3_windows_amd64.zip", "name": "ligolo-ng_proxy_0.8.3_windows_amd64.zip", "tags": ["Network"]},
+  { "url": "https://github.com/ffuf/ffuf/releases/download/v2.1.0/ffuf_2.1.0_windows_amd64.zip", "name": "ffuf_2.1.0_windows_amd64.zip", "tags": ["Network"]},
+  { "url": "https://github.com/DominicBreuker/pspy/releases/download/v1.2.1/pspy32", "name": "pspy32", "tags": ["Linux"]},
+  { "url": "https://github.com/DominicBreuker/pspy/releases/download/v1.2.1/pspy32s", "name": "pspy32s", "tags": ["Linux"]},
+  { "url": "https://github.com/DominicBreuker/pspy/releases/download/v1.2.1/pspy64", "name": "pspy64", "tags": ["Linux"]},
+  { "url": "https://github.com/DominicBreuker/pspy/releases/download/v1.2.1/pspy64s", "name": "pspy64s", "tags": ["Linux"]},
+  { "url": "https://github.com/nicocha30/ligolo-ng/releases/download/v0.8.3/ligolo-ng_agent_0.8.3_linux_amd64.tar.gz", "name": "ligolo-ng_agent_0.8.3_linux_amd64.tar.gz", "tags": ["Linux"]},
+  { "url": "https://github.com/nicocha30/ligolo-ng/releases/download/v0.8.3/ligolo-ng_proxy_0.8.3_linux_amd64.tar.gz", "name": "ligolo-ng_proxy_0.8.3_linux_amd64.tar.gz", "tags": ["Network"]},
+  { "url": "https://github.com/ffuf/ffuf/releases/download/v2.1.0/ffuf_2.1.0_linux_amd64.tar.gz", "name": "ffuf_2.1.0_linux_amd64.tar.gz", "tags": ["Network"]}
 ]
