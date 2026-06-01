@@ -1996,7 +1996,7 @@ if ($bappFiles.Count -gt 0 -and (Test-Path $burpConfigPath)) {
     if ($extensions.Count -gt 0) {
         $burpConfig = Get-Content -Path $burpConfigPath -Raw | ConvertFrom-Json
         $burpConfig.user_options.extender.extensions = $extensions
-        $burpConfig | ConvertTo-Json -Depth 10 | Set-Content -Path $burpConfigPath -Encoding UTF8
+        [System.IO.File]::WriteAllText($burpConfigPath, ($burpConfig | ConvertTo-Json -Depth 10), (New-Object System.Text.UTF8Encoding $false))
         Write-ContainerLog "Updated UserConfigPro.json with $($extensions.Count) extension(s)"
     }
 }
