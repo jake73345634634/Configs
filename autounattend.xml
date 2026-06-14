@@ -1980,7 +1980,7 @@ if ($bappFiles.Count -gt 0 -and (Test-Path $burpConfigPath)) {
                 errors = "ui"
                 extension_file = "bapps\$uuid\$entryPoint"
                 extension_type = $extType
-                loaded = $true
+                loaded = $false
                 name = $manifest["Name"]
                 output = "ui"
                 use_ai = $false
