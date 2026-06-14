@@ -34,5 +34,6 @@
   { "url": "https://github.com/DominicBreuker/pspy/releases/download/v1.2.1/pspy64s", "name": "pspy64s", "tags": ["Linux"]},
   { "url": "https://github.com/nicocha30/ligolo-ng/releases/download/v0.8.3/ligolo-ng_agent_0.8.3_linux_amd64.tar.gz", "name": "ligolo-ng_agent_0.8.3_linux_amd64.tar.gz", "tags": ["Linux"]},
   { "url": "https://github.com/nicocha30/ligolo-ng/releases/download/v0.8.3/ligolo-ng_proxy_0.8.3_linux_amd64.tar.gz", "name": "ligolo-ng_proxy_0.8.3_linux_amd64.tar.gz", "tags": ["Network"]},
-  { "url": "https://github.com/ffuf/ffuf/releases/download/v2.1.0/ffuf_2.1.0_linux_amd64.tar.gz", "name": "ffuf_2.1.0_linux_amd64.tar.gz", "tags": ["Network"]}
+  { "url": "https://github.com/ffuf/ffuf/releases/download/v2.1.0/ffuf_2.1.0_linux_amd64.tar.gz", "name": "ffuf_2.1.0_linux_amd64.tar.gz", "tags": ["Network"]},
+  { "url": "https://github.com/sensepost/gowitness/releases/download/3.1.1/gowitness-3.1.1-windows-amd64.exe", "name": "gowitness-3.1.1-windows-amd64.exe", "tags": ["Network"]}
 ]
