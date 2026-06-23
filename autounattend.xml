@@ -1552,21 +1552,6 @@ function Install-WSL {
     }
 }
 
-function Invoke-WindowsActivation {
-    param([string]$LogFile)
-    
-    Write-Host "`nActivating Windows and Office..."
-    Write-Log "=== Windows/Office Activation ===" -LogFile $LogFile
-    
-    try {
-        $cmdOutput = &amp; ([ScriptBlock]::Create((Invoke-RestMethod -Uri https://get.activated.win))) /HWID /Ohook 2&gt;&amp;1 | Out-String
-        Write-CommandOutput -Output $cmdOutput -LogFile $LogFile
-    }
-    catch {
-        Write-Log "Activation failed: $_" -LogFile $LogFile -IsError
-    }
-}
-
 # ============================================================================
 # CONTAINER INSTALLATION (Requires Reboot)
 # ============================================================================
@@ -2445,7 +2430,6 @@ New-ServiceShortcuts -ToolDirs $toolDirs
 Install-PowerShellModules -RemoteUrl $Config.RemoteUrls.PowerShellModules -LogFile $logs.PowerShell_Modules.FullName
 Install-WindowsCapabilities -RemoteUrl $Config.RemoteUrls.WindowsCapabilities -LogFile $logs.Capabilities.FullName
 Install-WingetApplications -RemoteUrl $Config.RemoteUrls.WingetApplications -LogFile $logs.WinGet.FullName
-Invoke-WindowsActivation -LogFile $logs.Main.FullName
 Install-Repositories -RemoteUrl $Config.RemoteUrls.Repositories -LogFile $logs.Repositories.FullName -ToolDirs $toolDirs -SetupScriptsPath $Config.Directories.SetupScripts
 Install-Files -RemoteUrl $Config.RemoteUrls.Files -LogFile $logs.Files.FullName -ToolDirs $toolDirs -SetupScriptsPath $Config.Directories.SetupScripts
 Install-WSL -LogFile $logs.Main.FullName
