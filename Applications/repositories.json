@@ -34,5 +34,6 @@
   { "url": "https://github.com/ShutdownRepo/pywhisker", "name": "pywhisker", "tags": ["Active_Directory"] },
   { "url": "https://github.com/sqlmapproject/sqlmap", "name": "sqlmap", "tags": ["Network"] },
   { "url": "https://github.com/AlessandroZ/LaZagne", "name": "LaZagne", "tags": ["Windows"] },
-  { "url": "https://github.com/jonaslejon/malicious-pdf", "name": "malicious-pdf", "tags": ["Network"] }
+  { "url": "https://github.com/jonaslejon/malicious-pdf", "name": "malicious-pdf", "tags": ["Network"] },
+  { "url": "https://github.com/HackTricks-wiki/hacktricks", "name": "hacktricks", "tags": ["Resources"] }
 ]
