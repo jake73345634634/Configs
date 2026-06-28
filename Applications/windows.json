@@ -1,3 +1,4 @@
 [
-  "code --install-extension silofy.hackthebox --force"
+  "code --install-extension silofy.hackthebox --force",
+  "ollama pull qwen3.6:35b"
 ]

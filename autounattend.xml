@@ -392,6 +392,7 @@ $logfile = 'C:\Windows\Setup\Scripts\RemoveFeatures.log';
 			&lt;taskbar:TaskbarPinList&gt;
 				&lt;taskbar:DesktopApp DesktopApplicationID="Microsoft.Windows.Explorer" /&gt;
 				&lt;taskbar:UWA AppUserModelID="Microsoft.MicrosoftEdge_8wekyb3d8bbwe!MicrosoftEdge" /&gt;
+				&lt;taskbar:UWA AppUserModelID="Microsoft.WindowsTerminal_8wekyb3d8bbwe!App" /&gt;
 				&lt;taskbar:UWA AppUserModelID="windows.immersivecontrolpanel_cw5n1h2txyewy!microsoft.windows.immersivecontrolpanel" /&gt;
 			&lt;/taskbar:TaskbarPinList&gt;
 		&lt;/defaultlayout:TaskbarLayout&gt;
