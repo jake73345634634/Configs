@@ -44,5 +44,7 @@
   "Yubico.YubikeyManager": "",
   "Mozilla.Firefox": "",
   "Amazon.WorkspacesClient": "",
-  "PuTTY.PuTTY": ""
+  "PuTTY.PuTTY": "",
+  "Ollama.Ollama": "",
+  "Anthropic.ClaudeCode": ""
 }
