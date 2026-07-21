@@ -5,5 +5,6 @@
   "projectdiscovery/nuclei",
   "blacklanternsecurity/bbot",
   "ghcr.io/gchq/cyberchef",
-  "checkmarx/kics"
+  "checkmarx/kics",
+  "aquasec/trivy"
 ]
