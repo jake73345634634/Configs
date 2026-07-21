@@ -4,5 +4,6 @@
   "specterops/bloodhound",
   "projectdiscovery/nuclei",
   "blacklanternsecurity/bbot",
-  "ghcr.io/gchq/cyberchef"
+  "ghcr.io/gchq/cyberchef",
+  "checkmarx/kics"
 ]
