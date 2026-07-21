@@ -6,5 +6,6 @@
   "blacklanternsecurity/bbot",
   "ghcr.io/gchq/cyberchef",
   "checkmarx/kics",
-  "aquasec/trivy"
+  "aquasec/trivy",
+  "bridgecrew/checkov"
 ]
