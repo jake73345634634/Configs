@@ -7,5 +7,6 @@
   "ghcr.io/gchq/cyberchef",
   "checkmarx/kics",
   "aquasec/trivy",
-  "bridgecrew/checkov"
+  "bridgecrew/checkov",
+  "anchore/grype"
 ]
