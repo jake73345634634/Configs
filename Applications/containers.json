@@ -8,5 +8,6 @@
   "checkmarx/kics",
   "aquasec/trivy",
   "bridgecrew/checkov",
-  "anchore/grype"
+  "anchore/grype",
+  "anchore/syft"
 ]
