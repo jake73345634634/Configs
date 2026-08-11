@@ -16,7 +16,7 @@
   { "url": "https://github.com/techspence/ScriptSentry", "name": "ScriptSentry", "tags": ["Active_Directory"] },
   { "url": "https://github.com/EvotecIT/GPOZaurr", "name": "GPOZaurr", "tags": ["Active_Directory"] },
   { "url": "https://github.com/projectdiscovery/nuclei-templates", "name": "nuclei-templates", "tags": ["Resources"] },
-  { "url": "https://github.com/jake73345634634/Kubernetes-RBAC-Audit", "name": "Kubernetes-RBAC-Audit", "tags": ["Kubernetes"] },
+  { "url": "https://github.com/jake73345634634/Kubernetes-Audit", "name": "Kubernetes-Audit", "tags": ["Kubernetes"] },
   { "url": "https://github.com/danielmiessler/SecLists", "name": "SecLists", "tags": ["Resources"] },
   { "url": "https://github.com/ihebski/DefaultCreds-cheat-sheet", "name": "DefaultCreds-cheat-sheet", "tags": ["Resources"] },
   { "url": "https://github.com/urbanadventurer/username-anarchy", "name": "username-anarchy", "tags": ["Resources"] },
